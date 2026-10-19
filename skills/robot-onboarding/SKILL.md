@@ -1,24 +1,10 @@
 ---
 name: robot-onboarding
-description: 从现有机器人项目、SDK 或服务提取可用能力并接入 Robot RSI Harness，交付适配包、技能、资产引用和配置；用于接入开发，日常任务选择已有场景绑定使用运行基础流程。
+description: Inspect existing robot software and propose a source-grounded integration path; implement adapters only for an explicit integration request.
 ---
 
-# Robot onboarding
+# Robot project onboarding
 
-在接入方代码工作区完成集成。输入可以是已有机器人项目，也可以是 SDK/服务。优先复用已有控制与采集程序，输出可供运行 Agent 发现、选择和复用的产物。
-
-同一项目可继续运行和局部改进，按宿主用途取资料；输入/绑定错误先本地修正，缺 provider/方法补本地或共享扩展，公共合同/核心缺口用 issue_create 交最小复现。版本答复与安装/验证分开，细节见 docs/project-workflow.md。
-
-## 按需了解
-
-先确认安装的 Harness 版本与公共接口。SDK 路径直接查所需合同；现有项目路径先找入口、设备 owner、相关业务调用、配置和测试，再按目标读实现。源码发行版入口为 `docs/interfaces.md` 与 `docs/integration.md`。已有事实直接复用；静态理解不执行项目启动入口，不整库加载源码、日志或开发记忆。
-
-## 完成接入
-
-1. 按目标整理有来源的能力清单：用途、输入输出、来源模块/符号、依赖/资产、证据和缺口。区分完整可用、需要整理、依赖人工和缺失；函数或 UI 按钮不直接代表完整能力。
-2. 设备/算法映射为能力实现，稳定多步方法整理为技能，模型/标定作为资产，实例和位置归配置。接口合适就直接绑定，有差异则薄适配，业务/UI 耦合才提取模块；新语义才增合同，不逐函数增加工具。
-3. 通过 `robot_rsi.adapters` 交付工厂（声明 config_model，返回 Adapter，详见公共指南），保留已有设备 owner。映射单位、坐标、采集时间、回执和实际反馈；型号定义、实例、观测分开。计算输出交由原执行通道使用。
-4. 用现有测试、模拟 SDK 或录制数据补新合同所需验证，记录资产版本与适用范围。用 config-check/resources_list 查看元数据，按本次范围显式连接后试用；离线来源不冒充现场验证，缺少现场条件则列出具体缺项。
-5. 交付能力清单、适配包/必要技能、匿名配置、资产引用和验证依据。工厂可提供已创建的 Candidate 供 binding_candidates 按合同发现；按公共指南验证并保存选择。后续任务使用固定 binding_ref，不用备注文件冒充生效配置。当前选择覆盖 camera/kinematics，只读/计算试用不能代表运动已验。
-
-普通修正直接完成，不增加固定多轮复核或审批。后续运行 Agent 根据候选选择并验证场景组合，宿主保存与装配；已有合适绑定直接复用。运行侧只获取产物及必要说明，接入源码分析和开发记忆留在接入身份。
+The canonical English workflow is [the installed skill body](../../src/robot_rsi/resources/robot-onboarding/SKILL.md).
+In Harness, discover `robot_onboarding` with `skills_list` and load it with `skill_describe`.
+This source entry references the same body; it does not maintain a second copy.

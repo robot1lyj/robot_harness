@@ -237,6 +237,13 @@ class AgentState:
 
     def client_event(self, session, event):
         kind = event.get("type")
+        if kind == "client.initialization":
+            session["prompt_identity"] = event["prompt_identity"]
+            self.store.event("agent.initialization", {"session_id": session["id"], **event})
+        if kind == "client.item":
+            self.store.event("agent.native_item", {"session_id": session["id"], **event})
+        if kind in ("client.turn_input", "client.thread_created"):
+            self.store.event("agent.native_input", {"session_id": session["id"], **event})
         if kind == "thread.started":
             session["native_session_id"] = event.get("thread_id")
         if kind == "turn.started":
@@ -284,7 +291,8 @@ class AgentState:
             ended_at=time.time(),
             elapsed_s=elapsed_s,
             returncode=result.get("returncode"),
-            message=result.get("message", "")[:2000],
+            message=result.get("message", ""),
+            client_error=result.get("client_error"),
         )
         session["task_epoch"] = prior["task_epoch"]
         if session["task_epoch"] != record["execution"]["epoch"]:

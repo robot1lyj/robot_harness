@@ -30,7 +30,7 @@ from .contracts import (
     WorkspaceRead,
 )
 from .feedback import IssueCreate, IssueGet
-from .project import ProjectRead
+from .project import ProjectFiles, ProjectRead
 from .resources import (
     CalibrationQuery,
     FKRequest,
@@ -42,6 +42,7 @@ from .resources import (
 from .scene_bindings import BindingRead, BindingSave, BindingValidate, CandidateQuery
 
 TOOLS = {
+    "project_files": (ProjectFiles, "List one selected project directory or read one UTF-8 source; use next_offset to continue; onboarding/improve only"),
     "project_read": (ProjectRead, "Read purpose-selected project material cards or one body; host fixes purpose"),
     "issue_create": (IssueCreate, "Save a reasoned local/framework issue with selected evidence; no automatic diagnosis"),
     "issue_get": (IssueGet, "Read at most 3 issue/update states or one linked issue and replies"),

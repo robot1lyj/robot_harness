@@ -24,7 +24,7 @@ from .catalog import relevance
 from .contracts import Contract, HarnessError, Identifier
 from .storage import canonical
 
-BUILTINS = ("pick_place", "workspace-context", "task-memory")
+BUILTINS = ("pick_place", "workspace-context", "task-memory", "robot-onboarding")
 
 
 class Manifest(Contract):

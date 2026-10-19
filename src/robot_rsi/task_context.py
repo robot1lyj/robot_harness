@@ -9,13 +9,7 @@ from .contracts import HarnessError, MemoryRecall, SkillQuery
 from .scene_bindings import BindingRead
 from .storage import canonical
 
-INSTRUCTIONS = (
-    "仅用 Harness 工具处理当前目标，已有信息直接复用。保持任务 epoch、固定版本和原预算。"
-    "宿主负责等待操作，勿轮询或重发已有动作；未知效果交接。失败仅选 allowed_recovery。"
-    "步骤成功不代表整个目标完成，后续步骤用 after_operation_id。整个目标有证据达成后，"
-    "用 task_finish 保存简短整项目标结论和 operation_ids/evidence_refs，再 task_archive。"
-    "不创建其他任务、不改变目标、不领取人工权限、不每步总结或重复复核。"
-)
+INSTRUCTIONS = "Use the current task facts below; unchanged blocks remain valid. Read referenced details only when needed."
 
 
 def digest(value):

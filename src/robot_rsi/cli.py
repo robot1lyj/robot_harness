@@ -220,7 +220,8 @@ def main():
     )
     actions = agent.add_subparsers(dest="action", required=True)
     run = actions.add_parser("run")
-    run.add_argument("--task-id", required=True)
+    run.add_argument("--task-id")
+    run.add_argument("--project", help="Inspect this existing source root without an adapter profile")
     run.add_argument("goal", nargs="?")
     recipe = actions.add_parser(
         "recipe", help="Explicit complete pick_place_v1 code goal; no model"
@@ -344,6 +345,15 @@ def main():
             from .agent_host import control_call, control_path, run_agent
 
             if args.action == "run":
+                if args.project:
+                    if args.profile:
+                        raise HarnessError("project_profile_conflict", "Use --project for source-only inspection or an existing --profile")
+                    from .project import source_profile
+
+                    profile = source_profile(args.project)
+                if not args.task_id and not args.goal:
+                    raise HarnessError("goal_required", "Provide a request or an explicit task ID to resume")
+                args.task_id = args.task_id or uid("task")
                 result = asyncio.run(run_agent(profile, args.task_id, args.goal))
                 output(result)
                 sys.exit(0 if result["status"] == "complete" else 1)

@@ -8,7 +8,7 @@ from importlib.resources import files
 # Compatibility metadata for management fixtures; manifests own all definitions.
 SKILLS = [
     __import__('json').loads(files('robot_rsi').joinpath('resources', folder, 'skill.json').read_text())
-    for folder in ('pick_place', 'workspace-context', 'task-memory')
+    for folder in ('pick_place', 'workspace-context', 'task-memory', 'robot-onboarding')
 ]
 
 

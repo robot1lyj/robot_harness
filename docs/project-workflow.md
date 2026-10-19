@@ -1,5 +1,9 @@
 # 同一个项目中运行、改进与反馈
 
+For a first source inspection, use `robot-rsi agent run --project PATH "这是我的机器人项目，你看看"`.
+No facts/material index or adapter profile is required. The existing explicit project configuration
+below remains available for configured workflows; see [first inspection](integration.md#first-inspection-from-an-installed-environment).
+
 保留已有项目、适配包和状态目录。宿主 profile.project 指定项目 ID、根目录、本次用途、共同事实键
 与明确的资料索引。用途只路由资料，沿用原身份：onboarding/improve → development，run → runtime，
 evaluate → evaluation。各类资料可在同一项目中保存，原 Store 的角色/站点/工作区隔离继续有效。

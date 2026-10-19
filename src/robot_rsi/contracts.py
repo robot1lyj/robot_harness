@@ -131,11 +131,11 @@ class ProjectMaterial(Contract):
 
 
 class ProjectConfig(Contract):
-    id: Identifier
+    id: Identifier = "project"
     root: str
     purpose: ProjectPurpose = "run"
-    common_key: Identifier
-    materials: list[ProjectMaterial] = Field(max_length=1000)
+    common_key: Identifier | None = None
+    materials: list[ProjectMaterial] = Field(default_factory=list, max_length=1000)
 
 
 class TaskLimits(Contract):

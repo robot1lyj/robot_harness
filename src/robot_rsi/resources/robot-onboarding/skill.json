@@ -1,0 +1,8 @@
+{
+  "name": "robot_onboarding", "version": "1.0.0", "kind": "agent_workflow", "category": "foundation",
+  "description": "Inspect an existing robot project selectively, identify sourced capabilities and gaps, and suggest a minimal integration path. Understand first; implement integration only when requested.",
+  "qualification": "source_inspection; not device integration or physical validation",
+  "requires": {}, "resources": [],
+  "keywords": ["onboarding", "project", "inspect", "integration", "项目", "机器人项目", "看看", "了解", "接入", "最小接入"],
+  "input_model": "robot_rsi.contracts:Empty", "output_model": "robot_rsi.skill_result:SkillResult", "entry": "workspace_read"
+}

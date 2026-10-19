@@ -68,19 +68,22 @@ robot_harness/
 │   ├── runtime.py                统一调用与装配
 │   ├── builtin_tasks/            内置参考任务
 │   │   └── pick_place.py         抓放参数、执行和完整目标配方
-│   ├── resources/                随包分发的技能说明与 manifest
+│   ├── prompts.py                已安装基础提示读取与身份
+│   ├── resources/                随包提示、技能说明与 manifest
+│   │   ├── prompts/base.md       英文基础提示，AgentHost/MCP 同源
+│   │   ├── robot-onboarding/    可发现的源码了解/接入工作流
 │   │   ├── workspace-context/    工作区资料管理
 │   │   ├── task-memory/          任务检查点、恢复与归档
 │   │   └── pick_place/           抓放参考技能的描述与注册信息
 │   └── …                         执行、合同、记忆等模块，见下表
-├── skills/robot-onboarding/       给接入方 Agent 的基础技能
+├── skills/robot-onboarding/       指向随包规范正文的源码入口
 ├── docs/                         公共架构、接口、接入、工作流和性能说明
 ├── examples/                     独立适配、已有项目接入与局部改进示例
 ├── configs/                      配置样例
 └── tests/                        通用合同、运行流程及模块边界测试
 ```
 
-Python wheel 安装 `src/robot_rsi` 的运行模块和随包资源；接入说明、公共指南与示例由产品仓库提供，外部适配/技能包独立安装。使用方项目保存自己的设备配置、扩展代码与运行记录。
+Python wheel 安装 `src/robot_rsi` 的运行模块、英文基础提示与规范接入技能正文；公共指南与示例由产品仓库提供，外部适配/技能包独立安装。使用方项目保存自己的设备配置、扩展代码与运行记录。
 
 当前采用一个 Python 根包组织模块。下表是实际职责导航，不表示已经拆成多个独立服务。
 
@@ -128,3 +131,17 @@ Python wheel 安装 `src/robot_rsi` 的运行模块和随包资源；接入说�
 - [接入指南](integration.md)：已有项目、SDK 和算法怎样接到框架。
 - [接口参考](interfaces.md)：能力分类、调用语义和精确 schema 的源码位置。
 - [文档目录](README.md)：按使用目的查找说明与参考案例。
+
+## First-project prompt and source scope
+
+[prompts.py](../src/robot_rsi/prompts.py) reads [base.md](../src/robot_rsi/resources/prompts/base.md)
+from the installed package and records its content identity. AgentHost supplies it to CodexClient
+thread/start; MCP initialize adds only protocol guidance. Task context/delta facts remain separate.
+The packaged [onboarding workflow](../src/robot_rsi/resources/robot-onboarding/SKILL.md) is loaded
+through Registry on demand; framework development AGENTS is not the runtime prompt.
+
+agent run --project constructs the existing Runtime/Store/Registry with no adapter or device owner,
+then uses Project's bounded project_files source access in development/onboarding scope. Explicit
+materials and existing profile paths continue to work. Knowledge is saved in ordinary sourced notes,
+not a second project database; each new task has a separate native client directory. Source access
+never grants runtime/evaluation scopes arbitrary filesystem or execution permissions.

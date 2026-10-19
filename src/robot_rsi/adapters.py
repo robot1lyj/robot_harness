@@ -108,6 +108,8 @@ def factory_config(profile):
 
 
 def config_check(profile):
+    if profile.robot is None and profile.host.adapter is None:
+        return {"valid": True, "adapter": None, "mode": "source_only", "connected": False}
     name, _, _ = factory_config(profile)
     return {
         "valid": True,
@@ -119,6 +121,8 @@ def config_check(profile):
 
 
 def build_adapter(profile, store, **overrides):
+    if profile.robot is None and profile.host.adapter is None:
+        return Adapter(bindings=SkillBindings(scene=None), resources=())
     _, factory, options = factory_config(profile)
     result = factory(AdapterContext(profile, store, options, **overrides))
     if not isinstance(result, Adapter):

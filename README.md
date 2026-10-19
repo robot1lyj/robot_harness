@@ -58,13 +58,32 @@ uv sync --frozen --no-dev
 uv run --no-sync robot-rsi --version
 ```
 
-### 2. 接入已有能力
+### 2. Inspect your project with one request
 
-向你的 coding Agent 提供机器人项目或 SDK 的位置，并让它使用本仓库的 [robot-onboarding](skills/robot-onboarding/SKILL.md)：
+With the existing Codex CLI/login available, provide a directory and an ordinary request:
 
-> 阅读 skills/robot-onboarding/SKILL.md 和接入指南，梳理我的机器人项目中已有的能力，按当前任务需要生成适配包、宿主配置和必要的验证说明。
+```bash
+uv run --no-sync robot-rsi agent run --project /path/to/robot-project "这是我的机器人项目，你看看"
+```
 
-接入可以复用原项目中的控制、采集和计算模块。机械臂、相机、运动学和深度算法按能力组合；地址、设备名称和部署位置留在配置中。具体接口与安装步骤见[接入指南](docs/integration.md)。
+No adapter profile, material index or long AGENTS file is required for this first inspection.
+The installed English base prompt routes the Agent to a discoverable onboarding workflow;
+source access is read-only and scoped to this root, with no device owner or mock capabilities.
+The result includes a generated task ID and the actual Chinese conclusion in `message`.
+Inspection does not install adapters or claim hardware integration.
+
+A new invocation creates a fresh task/client conversation while reusing sourced project notes:
+
+```bash
+uv run --no-sync robot-rsi agent run --project /path/to/robot-project "继续看看这个项目，给我最小接入建议"
+```
+
+Use `--task-id ID` to resume an explicit task instead. State defaults to the user data directory;
+`ROBOT_RSI_STATE_ROOT` can select a separate data root outside the inspected source. Model/login configuration follows the existing
+Codex client. The client workspace is separate from the inspected source, and user AGENTS files
+are never overwritten. See [integration](docs/integration.md) for wheel installation and scope.
+Request actual adapter implementation only after deciding what should be integrated; the
+[onboarding workflow](src/robot_rsi/resources/robot-onboarding/SKILL.md) and public contracts guide it.
 
 ### 3. 让 Agent 调用框架
 

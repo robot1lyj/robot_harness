@@ -16,7 +16,7 @@ AGENT_TOOLS = [
     "task_context", "task_checkpoint_get", "task_run", "task_recover", "task_cancel",
     "task_archive", "task_finish", "operation_get", "operation_cancel", "robot_observe",
     "workspace_read", "workspace_note", "skills_list", "skill_describe", "memory_recall",
-    "project_read", "issue_create", "issue_get",
+    "project_read", "project_files", "issue_create", "issue_get",
     "assistance_get",
     "binding_candidates", "binding_read", "binding_validate", "binding_save",
     "camera_describe", "camera_capture", "kinematics_fk", "kinematics_ik", "model_get", "calibration_get",
@@ -51,7 +51,7 @@ class CodexClient:
 
     @staticmethod
     def key(turn):
-        return canonical([turn["scope"], turn["task_id"], turn["binding"]])
+        return canonical([turn["scope"], turn["task_id"], turn["binding"], turn.get("base_prompt", {}).get("identity")])
 
     def context_cursor(self, turn):
         entry = self.threads.get(self.key(turn))
@@ -176,6 +176,8 @@ class CodexClient:
         if not active or params.get("threadId") != active["entry"]["id"]:
             return
         method = message["method"]
+        if method == "item/completed" and params["item"]["type"] != "reasoning":
+            active["emit"]({"type": "client.item", "item_type": params["item"]["type"]})
         if method == "turn/started":
             active["turn_id"] = params["turn"]["id"]
             active["emit"]({"type": "turn.started", "turn_id": active["turn_id"]})
@@ -184,9 +186,9 @@ class CodexClient:
         if method == "thread/tokenUsage/updated":
             active["usage"] = params["tokenUsage"]["total"]
             active["entry"]["last_usage"] = params["tokenUsage"]["last"]
-            active["entry"]["context_window"] = params["tokenUsage"]["modelContextWindow"]
+            active["entry"]["context_window"] = params["tokenUsage"].get("modelContextWindow")
         elif method == "item/completed" and params["item"]["type"] == "agentMessage":
-            active["message"] = params["item"]["text"][:2000]
+            active["message"] = params["item"]["text"]
             active["entry"]["visible_bytes"] += len(params["item"]["text"].encode())
         elif method == "error":
             active["emit"]({"type": "error", "message": str(params.get("error", {}))[:2000]})
@@ -206,12 +208,25 @@ class CodexClient:
             await self.rpc("thread/unsubscribe", {"threadId": entry["id"]})
             entry = None
         if entry is None:
-            result = await self.rpc("thread/start", {
+            from .prompts import base_prompt
+
+            prompt = turn.get("base_prompt") or base_prompt()
+            params = {
                 "model": turn["binding"]["model"], "cwd": turn["client_root"],
                 "approvalPolicy": "never", "sandbox": "read-only", "ephemeral": True,
-                "baseInstructions": "You are a workspace runtime Agent. Use only supplied Harness tools. No shell, filesystem, network, other agents or developer materials.",
+                "baseInstructions": prompt["text"],
                 "dynamicTools": turn["tools"], "experimentalRawEvents": False,
-            })
+                "config": {"features": {"shell_tool": False, "unified_exec": False,
+                           "multi_agent": False, "skip_host_skill_discovery": True,
+                           "skill_search": False, "skill_mcp_dependency_install": False,
+                           "apps": False, "plugins": False, "memories": False},
+                           "web_search": "disabled"},
+            }
+            emit({"type": "client.initialization", "params": params, "prompt_identity": prompt["identity"]})
+            result = await self.rpc("thread/start", params)
+            emit({"type": "client.thread_created", "thread_id": result["thread"]["id"],
+                  "model": result.get("model"), "reasoning_effort": result.get("reasoningEffort"),
+                  "cwd": result["thread"].get("cwd")})
             entry = {"id": result["thread"]["id"], "visible_bytes": 0, "usage": {}}
             self.threads[key] = entry
         emit({"type": "thread.started", "thread_id": entry["id"]})
@@ -222,6 +237,8 @@ class CodexClient:
         self.active = active
         try:
             async with asyncio.timeout(turn["timeout_s"]):
+                emit({"type": "client.turn_input", "thread_id": entry["id"],
+                      "prompt": turn["prompt"], "effort": turn["binding"]["reasoning_effort"]})
                 result = await self.rpc("turn/start", {
                     "threadId": entry["id"], "effort": turn["binding"]["reasoning_effort"],
                     "input": [{"type": "text", "text": turn["prompt"], "text_elements": []}],

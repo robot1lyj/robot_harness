@@ -19,6 +19,7 @@ from .agent_client import AGENT_TOOLS, CodexClient
 from .contracts import HarnessError, SkillQuery, TaskBegin, TaskContext
 from .mcp_server import create_mcp
 from .operations import TERMINAL
+from .prompts import base_prompt
 from .runtime import TOOLS, Runtime
 from .storage import canonical
 from .task_context import build_task_context
@@ -27,6 +28,7 @@ from .task_context import build_task_context
 class AgentHost:
     def __init__(self, runtime):
         self.runtime = runtime
+        self.base_prompt = base_prompt()
         self.admin = secrets.token_urlsafe(32)
         self.grants = {self.admin: {"actor": "operator"}}
         self.url = None
@@ -92,6 +94,11 @@ class AgentHost:
             await job
             sock.close()
 
+    def conclusion(self, task_id):
+        sessions = [s for s in self.runtime.store.all("agent_session") if s["task_id"] == task_id]
+        summary = (self.runtime.task_memory._load(task_id).get("task_result") or {}).get("summary", "")
+        return (sessions[-1].get("message") if sessions else None) or summary
+
     async def run(self, task_id, *, client=None):
         client = client or self.client
         if client not in self.clients:
@@ -104,18 +111,22 @@ class AgentHost:
                     await self.wait_operation(task_id, identity, record["execution"]["epoch"])
             request = self.runtime.agent_state.request(task_id)
             if request["role"] == "complete":
-                return {"status": "complete", "task_id": task_id, "request": request}
+                return {"status": "complete", "task_id": task_id, "request": request,
+                        "message": self.conclusion(task_id)}
             if request["role"] == "closed":
                 return {
                     "status": request["task_outcome"]["outcome"],
                     "task_id": task_id,
                     "request": request,
+                    "message": self.conclusion(task_id),
                 }
             if request["role"] == "operator" or not request["configured"]:
-                return {"status": "handoff", "task_id": task_id, "request": request}
+                return {"status": "handoff", "task_id": task_id, "request": request,
+                        "message": self.conclusion(task_id)}
             config = getattr(self.runtime.profile.agent, request["role"])
             try:
                 binding = client.binding(request["role"], config)
+                binding = {**binding, "prompt_identity": self.base_prompt["identity"]["sha256"]}
             except HarnessError as exc:
                 return {
                     "status": "handoff",
@@ -135,11 +146,12 @@ class AgentHost:
                     "task_id": task_id,
                     "task_epoch": session["task_epoch"],
                     "binding": binding,
+                    "base_prompt": self.base_prompt,
                     "url": self.url,
                     "token": token,
                     "timeout_s": max(0.01, record["execution"]["deadline_at"] - time.time()),
                     "scope": self.runtime.store.scope,
-                    "client_root": str(self.runtime.store.root / "native-client"),
+                    "client_root": str(self.runtime.store.root / "native-client" / task_id),
                     "history_bytes": self.runtime.profile.task_limits.context_bytes * 4,
                     "tools": [{"type": "function", "name": name, "description": TOOLS[name][1],
                                "inputSchema": TOOLS[name][0].model_json_schema(),
@@ -156,8 +168,8 @@ class AgentHost:
                                            blocks=True, delivered=cursor)
                 view = build_task_context(self.runtime, context_args)
                 turn["view"] = view
-                turn["prompt"] = (f"角色 {request['role']}，接续任务。以下为必要全量或变化整块；"
-                                  "已有块继续有效，不用重复读取。工具参数直接传入。\n" + canonical(view))
+                turn["prompt"] = (f"Host role: {request['role']}. Current task facts or changed blocks follow. "
+                                  "Unchanged blocks remain valid. Pass tool arguments directly.\n" + canonical(view))
                 self.runtime.store.event("agent.context_delivered", {
                     "task_id": task_id, "session_id": session["id"], "full": view["full"],
                     "changed": list(view["blocks"]), **view["metrics"],
@@ -170,6 +182,9 @@ class AgentHost:
                         arguments.setdefault("selected_skill", selected)
                     response = await self.runtime.invoke(name, arguments,
                                                          agent_session_id=session["id"])
+                    if name in ("project_files", "workspace_read", "workspace_note", "skills_list", "skill_describe"):
+                        self.runtime.store.event("agent.tool_result", {"session_id": session["id"],
+                                                 "tool": name, "response": response})
                     if response["ok"] and name == "task_context":
                         turn["view"] = response["result"]
                     if response["ok"] and name in ("task_run", "task_recover", "operation_get",
@@ -232,6 +247,8 @@ class AgentHost:
                 if preparing:
                     result["preparation_error"] = exc.payload() if isinstance(exc, HarnessError) else {
                         "code": "preparation_failed", "cause": type(exc).__name__}
+                elif isinstance(exc, HarnessError):
+                    result["client_error"] = exc.payload()
             finally:
                 # Revoke only this model credential; the control endpoint remains available.
                 self.grants.pop(token, None)
@@ -246,13 +263,16 @@ class AgentHost:
                     "task_id": task_id,
                     "session": finished,
                     "request": self.runtime.agent_state.request(task_id),
+                    "message": result.get("message", ""),
+                    **({"client_error": result["client_error"]} if "client_error" in result else {}),
                 }
             next_request = self.runtime.agent_state.request(task_id)
             if (
                 next_request["role"] == request["role"]
                 and next_request["fingerprint"] == request["fingerprint"]
             ):
-                return {"status": "handoff", "task_id": task_id, "request": next_request}
+                return {"status": "handoff", "task_id": task_id, "request": next_request,
+                        "message": self.conclusion(task_id)}
 
     async def wait_operation(self, task_id, identity, epoch):
         started = time.monotonic()

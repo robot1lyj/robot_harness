@@ -7,6 +7,7 @@ from mcp.server.fastmcp import Context, FastMCP, Image
 from mcp.server.fastmcp.exceptions import ToolError
 
 from .contracts import ArtifactQuery, HarnessError, Identifier, Profile
+from .prompts import base_prompt
 from .runtime import TOOLS, Runtime
 
 
@@ -39,20 +40,9 @@ def create_mcp(profile: Profile, *, runtime=None, grant=None) -> FastMCP:
     server = RuntimeMCP(
         "Robot RSI Harness",
         lifespan=lifespan,
-        instructions=(
-            (
-                f"Host bound task {profile.active_task_id}; task_context aggregates its bounded context. "
-                "Use its current task_epoch for task_run or an allowed task_recover. "
-                if profile.active_task_id
-                else "Use task_begin to establish a task budget, or workspace_read for a workspace brief. "
-            )
-            + "Find skills with skills_list(query=task) or task_context. "
-            "Read selected instructions with skill_describe; agent_workflow skills name their tools, "
-            "code skills run through task_run. Reuse context already read. "
-            "Host selects the memory identity. Motion is synthetic-only in v0.1. "
-            "Operation acceptance is not success. Await terminal status; manipulator operations require confirmed HOLD. "
-            "All tool inputs are nested inside arguments. Fetch images only when useful."
-        ),
+        instructions=base_prompt()["text"] + "\n\nMCP protocol: all tool inputs are nested inside arguments. "
+        + (f"The host bound task is {profile.active_task_id}. " if profile.active_task_id else "Use task_begin for a new task. ")
+        + "Fetch artifact images only when useful.",
     )
 
     server.grant = grant

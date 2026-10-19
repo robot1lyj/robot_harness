@@ -1,5 +1,46 @@
 # 接入自己的机器人项目与能力
 
+## First inspection from an installed environment
+
+Use Python 3.12/3.13, the existing Codex CLI and its file-based login. Build/install the wheel
+or use the prepared source environment; no project adapter is needed to inspect source:
+
+```bash
+uv build --wheel --out-dir /tmp/harness-wheels
+uv venv /tmp/harness-env
+uv pip install --python /tmp/harness-env/bin/python /tmp/harness-wheels/*.whl
+/tmp/harness-env/bin/robot-rsi agent run --project /path/to/project "这是我的机器人项目，你看看"
+/tmp/harness-env/bin/robot-rsi agent run --project /path/to/project "继续看看这个项目，给我最小接入建议"
+```
+
+Each command without --task-id starts a new native conversation and task. The same selected
+project root maps to the same development/onboarding Store scope, so the second task can find
+saved notes without inheriting the first chat. --task-id preserves explicit task continuation.
+The first entry generates a source-only host configuration with no device resources/capabilities;
+existing --profile paths keep their configured adapters and behavior. Missing paths or login/client
+conditions return an explicit error/handoff rather than guessing or manufacturing integration.
+
+The English base instructions are loaded from installed resources/prompts/base.md. AgentHost
+injects them once in native thread/start; MCP initialize uses the same text plus its parameter
+nesting convention. A session records prompt identity, while subsequent turns carry task/delta
+facts. An external MCP client's adoption of instructions depends on that client.
+
+robot_onboarding is an installed agent_workflow, discovered with the existing skill tools.
+Its canonical English body lives in resources/robot-onboarding/SKILL.md; the root skills entry
+references it. project_files lists/reads only the selected onboarding/improve root, with bounded
+text and continuation offsets. It rejects traversal, symlinks and excluded state paths; runtime
+and evaluation purposes do not gain source access. It does not execute source or provide a shell.
+Useful outcomes use workspace_note and task_finish evidence, then archive; answers default to
+Chinese and the startup result exposes the actual conclusion in message. No AGENTS file is created
+or overwritten. Source-only task time/tool limits use the existing host controls; token usage is
+observed, with no model token quota.
+
+The public [inspection_project](../examples/inspection_project/README.md) is an authored offline
+source fixture, not an unknown real robot or a blind benchmark. Native validation must use an
+external project copy, client workspace/CODEX_HOME and state without development ancestors;
+only authentication is reused, not global skills/history. Scope and OS isolation are distinct.
+
+
 同一项目中接入、运行、局部改进、独立评估与框架答复的命令和完整例子见[项目工作流](project-workflow.md)。
 
 当前可通过一个已安装工厂装配可选机器人、相机、运动学与固定模型/标定数据。内置 mock 与外部 synthetic 样例均可运行；真实设备仍需接入方分别验证。本文只使用公开文件，不依赖开发记录。

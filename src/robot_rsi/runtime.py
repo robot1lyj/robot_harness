@@ -168,6 +168,9 @@ class Runtime:
         entries = []
         for name, (_, description) in TOOLS.items():
             available, reason = True, None
+            if name == "project_files":
+                available = self.project.can_read_sources
+                reason = "Host-selected onboarding/improve project only"
             if name in MOTION_TOOLS and not getattr(self.robot, "supports_motion", False):
                 available, reason = False, "Legacy YAM motion bridge not implemented"
             if name in ("task_recover", "skill_pick_place") and self.bindings.missing(
@@ -544,6 +547,8 @@ class Runtime:
             return self.workspace.read(args)
         if name == "project_read":
             return self.project.read(args)
+        if name == "project_files":
+            return self.project.files(args)
         if name == "issue_create":
             return self.feedback.create(args)
         if name == "issue_get":
