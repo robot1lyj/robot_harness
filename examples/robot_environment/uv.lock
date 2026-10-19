@@ -524,7 +524,7 @@ dependencies = [
     { name = "uvicorn" },
 ]
 wheels = [
-    { filename = "robot_rsi_harness-0.1.0-py3-none-any.whl", hash = "sha256:a98e9cd48326a3406a7e28d6589e2fac6b19da6e37b70d9d771774a902bf91d8" },
+    { filename = "robot_rsi_harness-0.1.0-py3-none-any.whl", hash = "sha256:72cf1e46218b5a6c23a25a738ccf58beab9349592be737ac9f70911ee5e1878c" },
 ]
 
 [package.metadata]

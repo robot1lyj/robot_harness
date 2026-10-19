@@ -5,8 +5,11 @@ not an initialization skill or separate state service. `environment.py` projects
 installation, bounded capability/skill cards and task-fixed binding/assets into the original
 workspace/task view. MCP initialize shares its configuration projection before lifespan creates
 the single Runtime. Existing role/station/namespace scopes isolate profiles in one robot usage
-directory. The [offline environment](../examples/robot_environment/README.md) keeps local source,
-extension, uv.lock/.venv, configuration and state together; Harness remains globally shared.
+directory. The [offline environment](../examples/robot_environment/README.md) keeps local
+extensions, uv.lock/.venv, configuration and state together; Harness remains globally shared.
+The legacy project/environment stays a read-only source by default. Capability packages,
+selected extracted modules, service contracts and versioned assets feed the independent usage
+environment; this is not a copy or in-place upgrade of the old application/.venv.
 
 Robot RSI Harness 是连接通用 Agent 与机器人能力的运行框架。它组织任务、调用和记录；使用方项目提供具体设备、算法与任务方法。
 

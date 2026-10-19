@@ -1,6 +1,6 @@
 ---
 name: robot-onboarding
-description: Inspect and classify existing robot software; deliver working integration artifacts when implementation and host development tools are authorized.
+description: Inspect read-only legacy sources; reuse or extract capabilities into a host-selected independent Harness usage environment.
 ---
 
 # Robot project onboarding

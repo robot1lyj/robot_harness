@@ -87,8 +87,10 @@ Request actual adapter implementation only after deciding what should be integra
 
 ### 3. 让 Agent 调用框架
 
-For independent operation, keep one usage directory per robot: local sources/extensions,
-tests, uv.lock/.venv, profiles and state. The shared Harness remains one global dependency.
+Keep one Harness usage directory per robot for local extensions/tests, uv.lock/.venv,
+profiles and state. The legacy project and its environment remain unchanged by default;
+reuse an already prepared independent Harness environment or create one in the selected
+usage directory. The shared Harness remains one global dependency.
 The [locked offline environment](examples/robot_environment/README.md) shows fixed core/extension
 wheels and a runnable extracted task method. Environment facts arrive automatically at startup
 and task entry; no environment initialization skill is required. Declare every runtime extension

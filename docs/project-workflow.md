@@ -1,7 +1,9 @@
 # 同一个项目中运行、改进与反馈
 
-Keep one usage directory per robot for source, local extension development/tests, installed
-uv environment, profiles and state. Harness development/release is shared. Environment profiles
+Keep one Harness usage directory per robot for local extension development/tests, installed
+uv environment, profiles and state; the legacy source/project environment stays unchanged by
+default. Reuse a prepared independent Harness environment or create one in the selected usage
+directory, not in the legacy .venv. Harness development/release is shared. Environment profiles
 and development/runtime/evaluation scopes express purposes inside this project; no extra generic
 validation project is required. The [locked offline example](../examples/robot_environment/README.md)
 includes a runnable extracted method, saved bindings, same-project scope separation and normal

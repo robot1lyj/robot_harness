@@ -1,23 +1,32 @@
 ---
 name: robot-onboarding
-description: Inspect and classify existing robot software; deliver working integration artifacts when implementation and host development tools are authorized.
+description: Inspect read-only legacy sources; reuse or extract capabilities into a host-selected independent Harness usage environment.
 ---
 
 # Robot project onboarding
 
-Use `robot_onboarding` for relevant inspection, integration or implementation gaps. Start from the host's environment summary, purpose, installed versions and valid bindings; no initialization skill is needed. Keep source, local extension development/tests, configuration and runtime state in one robot usage directory; Harness/shared extensions remain global. Reuse delivered facts and relevant `workspace_read` note cards/keys. Ordinary runtime uses installed capabilities/methods without repeating onboarding.
+Use `robot_onboarding` for relevant inspection, integration or implementation gaps. Start from the host's environment summary, purpose, installed versions and valid bindings; no initialization skill is needed. The robot's Harness usage directory holds local extensions/tests, configuration and state; the legacy project is a read-only source, not an installation target. Harness/shared extensions remain global. Reuse delivered facts and relevant `workspace_read` note cards/keys. Ordinary runtime uses installed capabilities/methods without repeating onboarding.
 
 ## Inspect and classify
 
 For a request to inspect, selectively read the README, configuration, entry points, relevant owner/implementation and tests with host-enabled `project_files`. Follow offsets; stop when the evidence supports the request. Do not run/import the application, edit source or connect devices. Deliver sourced findings, the relevant mapping and a minimal recommendation.
 
-For each relevant source record: module/symbol -> category -> actual contract/version or skill dependencies -> treatment and reason -> artifact, evidence and gaps. Distinguish device resources, capability behavior, provider/adapter implementations, reusable task skills, versioned model/calibration/weight assets and instance configuration. Choose direct reuse, thin adaptation, extraction or missing separately for each source. Stable methods with a goal, applicability and result criterion belong in executable skills; SDK functions or UI buttons are not automatically skills. Preserve one device writer. Do not default to wrapping the entire old API or register every function. Report a missing public contract with a minimal reproducer.
+For each relevant source record: module/symbol/version -> category -> actual contract/version or skill dependencies -> treatment and reason -> destination/maintenance location, artifact, evidence and gaps. Distinguish device resources, capability behavior, provider/adapter implementations, reusable task skills, versioned model/calibration/weight assets and instance configuration. Choose direct reuse, thin adaptation, extraction or missing per source. Stable methods with a goal, applicability and result criterion belong in executable skills; SDK functions or UI buttons are not automatically skills. Preserve one device writer. Do not default to wrapping the entire old API or register every function. Report a missing public contract with a minimal reproducer.
 
 ## Implement when requested and equipped
 
 An explicit implementation request with host-authorized development tools continues through actual local provider/skill/configuration artifacts, builds, fixed installation and necessary invocation/validation against the whole goal. A plan or inventory alone does not complete implementation. A restricted source-only host instead identifies the exact missing tools and hands off the unfinished work; it cannot grant itself development or device permissions.
 
-Reuse Profile/Runtime/Registry/Store. With uv, declare core and all extension wheels/fixed sources in pyproject.toml and uv.lock; at an execution-task boundary install with `uv sync --locked --no-dev --no-editable`. Keep configuration/assets/state outside .venv. Start with environment executables or `uv run --no-sync`; ordinary runtime calls do not install/update packages. Check necessary calls and provider/skill persistence after normal sync and restart. Preserve active task pins. System SDK/CUDA/CAN conditions are deployment prerequisites, not implicit Python installs. The public integration guide owns detailed commands.
+Prefer an existing independent Harness usage environment. If none exists, create uv/lock/.venv in the host-selected usage directory, reusing Profile/Runtime/Registry/Store. With only a legacy root, keep inspection read-only until a separate usage destination is selected; an already selected destination needs no repeated confirmation. General integration authorization does not authorize changes to legacy source, locks, .venv, configuration or services.
+
+Choose the transfer per object:
+
+- Independent package: install its fixed version/wheel in the usage environment; retain package provenance.
+- Coupled module: extract only selected versioned modules into the usage extension package; record source and new maintenance location, leaving originals in place.
+- Existing service: reuse its explicit contract and unique owner; analysis/installation does not start or restart it.
+- Asset: use a versioned reference or copy only needed data; keep instance configuration local.
+
+Do not copy the whole legacy project/.venv, depend on legacy PYTHONPATH/editable installs at runtime, or automatically write/sync changes back. Declare core/extensions in the usage pyproject.toml/uv.lock and install at an execution-task boundary with `uv sync --locked --no-dev --no-editable`, never into the old environment. Keep configuration/assets/state outside .venv. Run environment executables or `uv run --no-sync`; check necessary calls and restart/sync persistence, preserving active pins. System SDK/CUDA/CAN deployment is separate. Detailed commands belong to the public integration guide.
 
 ## Reuse and finish
 

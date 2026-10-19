@@ -2,13 +2,33 @@
 
 ## Independent environment and classified integration
 
-Use one robot usage directory for existing source, local extension development/tests, uv
-configuration, profiles and state. Harness is a shared installed dependency, not a private
+Use one Harness usage directory for local extension development/tests, uv configuration,
+profiles and state. The legacy project is a read-only source, not this installation target.
+Harness is a shared installed dependency, not a private
 copy per robot. Multiple profiles can test different environment/role scopes inside this same
 directory; a separate generic validation project or a set of worktrees per robot is unnecessary.
 See the [complete offline environment](../examples/robot_environment/README.md) for reproducible
 wheel builds, a checked-in uv.lock, normal `uv sync --locked --no-dev --no-editable`, execution,
 update and fresh-process reuse. All runtime extensions must be declared; state stays outside .venv.
+
+Prefer an existing independent environment already prepared for Harness. Otherwise create
+pyproject.toml/uv.lock/.venv in the host-selected usage directory. If only a legacy root is
+known, inspect it read-only and establish a separate usage destination before implementation;
+when the host already selected the destination, continue there without routine confirmation.
+A general integration request does not authorize edits to old source, locks, .venv, configuration
+or services. Do not run uv/pip install, upgrade or exact sync in the old environment. Shared uv
+download caches or compatible dependency versions do not make the old mutable environment reusable.
+
+| Source object | Transfer and maintenance |
+|---|---|
+| Independent capability package | Install a fixed version/wheel in the usage environment; retain package source/version |
+| Coupled source module | Extract selected versioned modules into the usage extension package; record original source and new maintenance location |
+| Existing service | Reuse the explicit contract and unique owner; discovery/build/install does not start or restart the service |
+| Model/calibration/data asset | Use a versioned reference or copy only needed data; keep instance configuration and applicability local |
+
+Leave originals in place. Do not copy an entire old project/.venv, make legacy PYTHONPATH/editable
+source a long-term runtime dependency, or automatically write/sync modifications back. Updates to
+the extracted package are maintained in the usage/shared extension location, not silently upstreamed.
 
 Classify relevant sources before implementation: source module/symbol → resource, capability,
 implementation, task skill, asset or configuration → actual contract/version or dependency →
@@ -24,13 +44,13 @@ MCP initialize gives configuration identity, purpose, qualification and detail e
 creating another Runtime. Counts/cards and original query tools bound the view; it is configuration,
 not a health check or live readiness claim. Ordinary runtime does not repeat robot_onboarding.
 
-The English robot_onboarding 1.2.0 workflow permits local candidate edits/build/tests only for
+The English robot_onboarding 1.3.0 workflow permits local candidate edits/build/tests only for
 an explicit implementation request with host-authorized development tools. Ordinary inspection
 stays read-only. The built-in source-only client still has no shell or source-write tools; an
 external coding host keeps its own authorized tools. No prompt grants installation/device rights.
 Existing fixed workflow versions remain immutable. On an existing skill pool, the host explicitly
 runs `robot-rsi --profile PROFILE skill discover` and then
-`robot-rsi --profile PROFILE skill enable robot_onboarding 1.2.0` to select the new version for
+`robot-rsi --profile PROFILE skill enable robot_onboarding 1.3.0` to select the new version for
 new work; existing task pins retain their version.
 
 Inspection ends with sourced findings/mapping and advice. Authorized implementation continues

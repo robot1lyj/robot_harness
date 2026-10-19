@@ -1,6 +1,6 @@
 {
-  "name": "robot_onboarding", "version": "1.2.0", "kind": "agent_workflow", "category": "foundation",
-  "description": "Inspect and classify project sources or deliver working integration artifacts, according to the request and host-authorized tools; reuse compatible installed capabilities and keep instance assets local.",
+  "name": "robot_onboarding", "version": "1.3.0", "kind": "agent_workflow", "category": "foundation",
+  "description": "Inspect read-only legacy sources and reuse packages, selected modules, services and versioned assets in an independent Harness usage environment; preserve the old project and installation.",
   "qualification": "purpose-scoped integration guidance; not physical validation",
   "requires": {}, "resources": [],
   "keywords": ["onboarding", "project", "inspect", "integration", "implement", "项目", "机器人项目", "看看", "了解", "接入", "最小接入", "实现"],

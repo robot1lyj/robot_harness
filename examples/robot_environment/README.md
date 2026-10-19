@@ -5,15 +5,16 @@ reuses its calculation and recording reader, and installs lab_adapter as a separ
 The [source mapping](integration-map.md) records the classification and reasons.
 It is not a hardware test or an unknown-project benchmark.
 
-Use one directory for this robot's sources, extension development/tests, configuration,
-Python environment and runtime state. Harness development/release is shared globally.
+Use one Harness usage directory for local extensions/tests, configuration, Python environment
+and runtime state. The legacy project/source, lock, .venv, configuration and services remain
+unchanged by default. Prefer a prepared independent Harness environment; otherwise create one
+at the selected usage destination. Harness development/release is shared globally.
 The optional second profile below tests isolation inside the same directory; it is not
 a second robot project or a required validation project.
 
 ```text
 slider-use/
-  sources/legacy_lab/       existing authored source (not on the runtime import path)
-  sources/extension/        local provider and task package
+  extensions/              optional selected module/package development, with provenance
   pyproject.toml / uv.lock  all runtime Python dependencies, including both wheels
   wheels/                  fixed core and extension artifacts
   .venv/                   disposable non-editable installation
@@ -22,17 +23,21 @@ slider-use/
   state/                   original Store/Registry scopes, outside .venv
 ```
 
-From the shared Harness checkout, choose a new usage directory. Copy only these public
-example files and source packages; no development AGENTS, chat history or evaluation answers:
+For an existing independent Harness environment, preserve its project/lock/configuration/state
+and reuse compatible installed packages; update only needed declarations/artifacts at a task
+boundary. The following setup commands are for a new example directory, not templates to copy
+over an existing environment.
+
+From the shared Harness checkout, choose a new usage directory. Copy only these setup files
+and fixed wheels. The extension build reads four
+selected legacy source/data files; it neither copies the old project/.venv nor starts its application:
 
 ```bash
 USE_DIR=/tmp/slider-use
-mkdir -p "$USE_DIR/wheels" "$USE_DIR/sources"
+mkdir -p "$USE_DIR/wheels"
 cp examples/robot_environment/{README.md,pyproject.toml,uv.lock,manage.py,integration-map.md} "$USE_DIR/"
-cp -R examples/legacy_lab "$USE_DIR/sources/legacy_lab"
-cp -R examples/project_adapter "$USE_DIR/sources/extension"
 uv build --wheel --out-dir "$USE_DIR/wheels"
-uv build --wheel "$USE_DIR/sources/extension" --out-dir "$USE_DIR/wheels"
+uv build --wheel examples/project_adapter --out-dir "$USE_DIR/wheels"
 cd "$USE_DIR"
 uv sync --locked --no-dev --no-editable
 uv run --no-sync python manage.py prepare
@@ -43,7 +48,10 @@ the inspection method, validates read/compute providers and saves named assets/b
 a short source note. It creates two profiles with separate original Store scopes. It does
 not install packages, start the legacy application or connect hardware. Run it once in a new
 state directory; existing immutable binding versions are retained instead of overwritten.
-All modules used at runtime come from site-packages, not sources/ or an editable checkout.
+All modules used at runtime come from fixed installed wheels in site-packages, not legacy
+PYTHONPATH/editable source. For local extraction, maintain only selected versioned modules under
+extensions/ and record their original source/new maintenance location; do not move originals or
+write changes back automatically. Existing services retain their owner and are not implicitly started.
 
 Use the environment's executable with the existing Codex CLI/login:
 
