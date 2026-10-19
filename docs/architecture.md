@@ -1,5 +1,13 @@
 # 项目架构与代码导航
 
+An independent environment is a host-selected Profile/Runtime/Store/Registry combination,
+not an initialization skill or separate state service. `environment.py` projects configuration,
+installation, bounded capability/skill cards and task-fixed binding/assets into the original
+workspace/task view. MCP initialize shares its configuration projection before lifespan creates
+the single Runtime. Existing role/station/namespace scopes isolate profiles in one robot usage
+directory. The [offline environment](../examples/robot_environment/README.md) keeps local source,
+extension, uv.lock/.venv, configuration and state together; Harness remains globally shared.
+
 Robot RSI Harness 是连接通用 Agent 与机器人能力的运行框架。它组织任务、调用和记录；使用方项目提供具体设备、算法与任务方法。
 
 本文说明公共结构和源码入口。精确输入输出以安装版本的工具 schema 与 Python 合同为准，接入步骤见[接入指南](integration.md)。

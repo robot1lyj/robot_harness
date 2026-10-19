@@ -7,6 +7,7 @@ from mcp.server.fastmcp import Context, FastMCP, Image
 from mcp.server.fastmcp.exceptions import ToolError
 
 from .contracts import ArtifactQuery, HarnessError, Identifier, Profile
+from .environment import configured_environment
 from .prompts import base_prompt
 from .runtime import TOOLS, Runtime
 
@@ -43,6 +44,11 @@ def create_mcp(profile: Profile, *, runtime=None, grant=None) -> FastMCP:
         instructions=base_prompt()["text"] + "\n\nMCP protocol: all tool inputs are nested inside arguments. "
         + (f"The host bound task is {profile.active_task_id}. " if profile.active_task_id else "Use task_begin for a new task. ")
         + "Fetch artifact images only when useful.",
+    )
+    # The stdio initialization options are built before lifespan starts. Read only
+    # host configuration here; the existing lifespan Runtime supplies all details.
+    server._mcp_server.instructions += "\nHost environment: " + json.dumps(
+        configured_environment(profile), ensure_ascii=False, separators=(",", ":")
     )
 
     server.grant = grant

@@ -1,5 +1,45 @@
 # 接入自己的机器人项目与能力
 
+## Independent environment and classified integration
+
+Use one robot usage directory for existing source, local extension development/tests, uv
+configuration, profiles and state. Harness is a shared installed dependency, not a private
+copy per robot. Multiple profiles can test different environment/role scopes inside this same
+directory; a separate generic validation project or a set of worktrees per robot is unnecessary.
+See the [complete offline environment](../examples/robot_environment/README.md) for reproducible
+wheel builds, a checked-in uv.lock, normal `uv sync --locked --no-dev --no-editable`, execution,
+update and fresh-process reuse. All runtime extensions must be declared; state stays outside .venv.
+
+Classify relevant sources before implementation: source module/symbol → resource, capability,
+implementation, task skill, asset or configuration → actual contract/version or dependency →
+direct reuse, thin adaptation, extraction or missing (with reason) → artifact/evidence/gap.
+The [example mapping](../examples/robot_environment/integration-map.md) preserves a reusable
+height-inspection method as a code skill, reuses computation and packages recorded inputs/assets;
+the old UI/application entry is unnecessary. Do not register every function as a skill or assume
+the whole old API must remain a service. A missing public contract is a specific handoff.
+
+The host's environment view comes from existing Profile/Runtime/Registry/Store/Assets/bindings.
+AgentHost first/restored input, task_begin, workspace_read and task_context supply these facts;
+MCP initialize gives configuration identity, purpose, qualification and detail entries without
+creating another Runtime. Counts/cards and original query tools bound the view; it is configuration,
+not a health check or live readiness claim. Ordinary runtime does not repeat robot_onboarding.
+
+The English robot_onboarding 1.2.0 workflow permits local candidate edits/build/tests only for
+an explicit implementation request with host-authorized development tools. Ordinary inspection
+stays read-only. The built-in source-only client still has no shell or source-write tools; an
+external coding host keeps its own authorized tools. No prompt grants installation/device rights.
+Existing fixed workflow versions remain immutable. On an existing skill pool, the host explicitly
+runs `robot-rsi --profile PROFILE skill discover` and then
+`robot-rsi --profile PROFILE skill enable robot_onboarding 1.2.0` to select the new version for
+new work; existing task pins retain their version.
+
+Inspection ends with sourced findings/mapping and advice. Authorized implementation continues
+through real artifacts, fixed uv installation and necessary calls/validation; a saved plan alone
+does not complete it. Similar device models are discovery clues: reuse follows actual contracts,
+SDK/dependencies and applicable evidence, while instance configuration/calibration stay local.
+Useful shared candidates can retain a brief source/version/check record for maintainers;
+ordinary local work proceeds without automatic uploads/messages or a new approval process.
+
 ## First inspection from an installed environment
 
 Use Python 3.12/3.13, the existing Codex CLI and its file-based login. Build/install the wheel

@@ -6,6 +6,11 @@ adapter wheel. The operator application is unfinished and is neither imported no
 [Capability inventory](capabilities.json) distinguishes source, dependencies, tests and gaps.
 This self-test is not a blind integration of an unknown project or physical camera evidence.
 
+For the normal locked deployment route and extracted height-inspection task, use the
+[single robot usage directory](../robot_environment/README.md). It declares both core and
+extension wheels, survives normal uv sync, and keeps sources/tests/configuration/state together.
+The editable commands below are developer-only exercises of the older binding sample.
+
 ```bash
 uv sync --frozen --group dev
 uv pip install --no-deps -e examples/project_adapter

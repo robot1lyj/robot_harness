@@ -6,6 +6,7 @@ import hashlib
 import time
 
 from .contracts import HarnessError, MemoryRecall, SkillQuery
+from .environment import configured_environment
 from .scene_bindings import BindingRead
 from .storage import canonical
 
@@ -70,7 +71,9 @@ def reference_context(runtime, args, context):
         {"tool": "skill_describe", "arguments": {"name": args.selected_skill}}
         if args.selected_skill else {"tool": "skills_list", "arguments": {}},
     ]
+    configured = configured_environment(runtime.profile)
     entry = {
+        "environment": {key: configured[key] for key in ("id", "purpose", "qualification")},
         "instruction": "Read these original records before deciding; apply all constraints, unknowns, "
         "epoch/pins/budget. Never replay unknown actions. Finish the whole goal with task_finish, then archive.",
         "read_first": reads,

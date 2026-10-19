@@ -1,0 +1,9 @@
+{
+  "name": "lab_inspect_height", "version": "1.0.0", "kind": "code", "category": "inspection",
+  "description": "Inspect the offline slider tool height at a requested position against supplied height bounds, using a recorded preview and the selected model; return the interval decision and image evidence.",
+  "qualification": "synthetic_recording", "resources": [],
+  "requires": {"camera.capture": 1, "kinematics.fk": 1},
+  "keywords": ["slider", "height", "inspect", "offline", "滑台", "高度", "检查", "离线"],
+  "input_model": "lab_adapter.inspect:Parameters", "output_model": "lab_adapter.inspect:Result",
+  "entry": "lab_adapter.inspect:run"
+}

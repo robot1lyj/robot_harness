@@ -87,6 +87,13 @@ Request actual adapter implementation only after deciding what should be integra
 
 ### 3. 让 Agent 调用框架
 
+For independent operation, keep one usage directory per robot: local sources/extensions,
+tests, uv.lock/.venv, profiles and state. The shared Harness remains one global dependency.
+The [locked offline environment](examples/robot_environment/README.md) shows fixed core/extension
+wheels and a runnable extracted task method. Environment facts arrive automatically at startup
+and task entry; no environment initialization skill is required. Declare every runtime extension
+in the lock so normal synchronization preserves it.
+
 接入时生成的 `profile.json` 是**本项目的运行配置单**：指定适配器及其参数、资源与版本、任务数据存放位置等。它让同一套框架知道本次要使用什么能力。“宿主”就是启动并运行 Harness 的程序或环境。
 
 先在装有框架和适配包的环境中检查配置。将 `path/to/profile.json` 换成自己的文件路径：

@@ -147,7 +147,8 @@ def main():
         help="Validate host bindings without opening a runtime or connecting hardware",
     )
     sub.add_parser("demo")
-    sub.add_parser("mcp", help="Run stdio MCP for one host-selected memory scope")
+    mcp = sub.add_parser("mcp", help="Run stdio MCP for one host-selected memory scope")
+    mcp.add_argument("--project", help="Read-only project scope without an adapter profile")
     serve = sub.add_parser("serve", help="Run authenticated loopback HTTP")
     serve.add_argument("--port", type=int, default=8767)
     call = sub.add_parser("call", help="One-shot tool call; motion waits for its terminal outcome")
@@ -245,6 +246,12 @@ def main():
             if args.profile
             else Profile()
         )
+        if args.command == "mcp" and args.project:
+            if args.profile:
+                raise HarnessError("project_profile_conflict", "Use --project or --profile")
+            from .project import source_profile
+
+            profile = source_profile(args.project)
         if args.command == "project" and args.purpose:
             if profile.project is None:
                 raise HarnessError("project_required", "Configure the existing project in the host profile")

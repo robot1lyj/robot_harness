@@ -1,5 +1,22 @@
 # 对象与能力接口
 
+## Host environment facts
+
+Environment identity reuses `station/namespace`, with the original role and Store scope; project
+ID/purpose remain separate. No scope migration or new environment database occurs.
+`task_begin` adds `environment` to its result. `workspace_read` and task_context workspace blocks
+carry the same projection: configuration-only qualification, tool scope, installation digest,
+bounded capability/resource/skill cards and detail tools, task-fixed asset/skill references and
+binding summaries. Counts/omissions are explicit; full instructions/dependency lists and live
+observations remain at their original tools. Existing environment arms/cameras/frames remain.
+For an oversized context, the reference entry includes minimum identity/purpose/qualification
+and points to workspace_read; it never pretends full constraints were delivered.
+
+MCP initialize automatically includes configuration identity, purpose, qualification and detail
+entries. It does not construct an additional Runtime or imply a device connection. `mcp --project`
+shares the source-only profile helper with `agent run --project`; --profile and --project conflict.
+Missing roots return project_not_found. Native source-only tool permissions are unchanged.
+
 本文面向适配器作者。先按职责分类对象，再选择所需端口。Scene、Manipulation、OutcomeVerifier、CameraPort、DepthPort、统一适配工厂、命名设备命令、KinematicsPort 与模型/标定读取已实现并有离线 synthetic 样例。下列其他对象是设计覆盖示例，不表示已有对应实现；精确字段与工具 schema 以安装版本为准。
 
 ## 放在哪里

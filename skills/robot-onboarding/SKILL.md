@@ -1,6 +1,6 @@
 ---
 name: robot-onboarding
-description: Inspect existing robot software and propose a source-grounded integration path; implement adapters only for an explicit integration request.
+description: Inspect and classify existing robot software; deliver working integration artifacts when implementation and host development tools are authorized.
 ---
 
 # Robot project onboarding

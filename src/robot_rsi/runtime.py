@@ -19,6 +19,7 @@ from .contracts import (
     TaskRun,
 )
 from .device_validation import confirm_command, validate_command, validate_state
+from .environment import environment_summary
 from .feedback import Feedback
 from .host import resolve_host
 from .memory import Memory
@@ -229,6 +230,7 @@ class Runtime:
     def workspace_brief(self, task_id=None, bindings=None):
         bound = self.bindings if bindings is None else bindings
         brief = self.workspace.brief(self.robot, bound.camera, self.skill_descriptors(bound))
+        brief["environment"].update(environment_summary(self, task_id, bound))
         versions = self.registry.versions()
         if task_id:
             versions = {**versions, **self.task_memory._load(task_id)["skill_versions"]}
@@ -502,7 +504,8 @@ class Runtime:
             else:
                 if args.binding_ref and previous.get("execution") and previous.get("resource_versions", {}).get("scene_binding") != args.binding_ref.model_dump():
                     raise HarnessError("task_conflict", "Task binding is already fixed")
-            return self.task_memory.begin(args, self.profile.task_limits, versions, capabilities)
+            result = self.task_memory.begin(args, self.profile.task_limits, versions, capabilities)
+            return {**result, "environment": environment_summary(self, args.task_id)}
         if name == "task_context":
             return build_task_context(self, args)
         if name == "task_finish":

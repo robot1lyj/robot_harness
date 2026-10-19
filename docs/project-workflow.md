@@ -1,5 +1,14 @@
 # 同一个项目中运行、改进与反馈
 
+Keep one usage directory per robot for source, local extension development/tests, installed
+uv environment, profiles and state. Harness development/release is shared. Environment profiles
+and development/runtime/evaluation scopes express purposes inside this project; no extra generic
+validation project is required. The [locked offline example](../examples/robot_environment/README.md)
+includes a runnable extracted method, saved bindings, same-project scope separation and normal
+sync/restart. Environment facts arrive automatically; onboarding is only needed for relevant
+inspection/integration work. Source-only inspection stays read-only; explicit implementation
+uses only development tools already authorized by its host.
+
 For a first source inspection, use `robot-rsi agent run --project PATH "这是我的机器人项目，你看看"`.
 No facts/material index or adapter profile is required. The existing explicit project configuration
 below remains available for configured workflows; see [first inspection](integration.md#first-inspection-from-an-installed-environment).

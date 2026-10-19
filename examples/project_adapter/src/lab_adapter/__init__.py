@@ -246,3 +246,9 @@ def factory(context):
 
 
 factory.config_model = Options
+
+
+def installed_packages():
+    from importlib.resources import files
+
+    return [files(__package__).joinpath("skills", name) for name in ("measure", "inspect")]

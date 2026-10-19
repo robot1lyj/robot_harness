@@ -22,6 +22,7 @@
 |---|---|
 | 独立相机、纯计算及共享设备 owner 的适配包 | [synthetic_adapter](../examples/synthetic_adapter/README.md) |
 | 从已有小项目提取能力、选择绑定并复用 | [project_adapter](../examples/project_adapter/README.md) |
+| 一个机器人使用目录、uv 锁定安装与可执行检查方法 | [robot_environment](../examples/robot_environment/README.md) |
 | 任务如何选技能、加载资料、处理业务结果 | [面板巡检流程走查](task-walkthrough.md)，设计案例 |
 
 安装版本的工具 schema 与对应源码定义精确接口；参考案例中的设备、任务和参数不构成使用方项目的默认配置。
