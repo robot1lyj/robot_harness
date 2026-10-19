@@ -1,0 +1,8 @@
+{
+  "name": "lab_measure", "version": "1.0.0", "kind": "code", "category": "calculation",
+  "description": "Read an authored lab recording and calculate its slider tip with the selected providers",
+  "qualification": "synthetic_recording", "resources": [],
+  "requires": {"camera.capture": 1, "kinematics.fk": 1}, "keywords": ["lab", "slider", "recording"],
+  "input_model": "lab_adapter.measure:Parameters", "output_model": "lab_adapter.measure:Result",
+  "entry": "lab_adapter.measure:run"
+}

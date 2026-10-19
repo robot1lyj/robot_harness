@@ -1,0 +1,23 @@
+{
+  "name": "task_memory",
+  "version": "0.5.0",
+  "kind": "agent_workflow",
+  "category": "foundation",
+  "description": "推进、恢复或结束任务时，保存短检查点、读取操作证据并归档。",
+  "qualification": "task_records",
+  "resources": [],
+  "requires": {},
+  "keywords": [
+    "任务",
+    "进度",
+    "检查点",
+    "恢复",
+    "归档",
+    "task",
+    "checkpoint",
+    "resume"
+  ],
+  "input_model": "robot_rsi.contracts:Empty",
+  "output_model": "robot_rsi.skill_models:SkillResult",
+  "entry": "task_checkpoint_get"
+}

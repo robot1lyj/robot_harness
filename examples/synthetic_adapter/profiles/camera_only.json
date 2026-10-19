@@ -1,0 +1,16 @@
+{
+  "robot": null,
+  "station": "example_station",
+  "state_root": "~/.local/state/robot-rsi",
+  "host": {
+    "adapter": {
+      "factory": "synthetic_fixture",
+      "options": {
+        "robot": false,
+        "kinematics": false,
+        "shared_owner": false
+      }
+    }
+  },
+  "namespace": "camera_only"
+}

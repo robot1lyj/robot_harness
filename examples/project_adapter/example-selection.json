@@ -1,0 +1,11 @@
+{
+  "scene_id": "slider_recording",
+  "purpose": "Read a detail recording at 12x8 resolution and calculate a slider point with the 250 mm fixture model",
+  "reason": "detail provides 12x8 and 250 mm; survey is 4x3 with a nominal 200 mm height",
+  "roles": {"camera": "detail_camera", "kinematics": "detail_kinematics"},
+  "requirements": {"camera.capture": 1, "kinematics.fk": 1},
+  "model_ref": {"id": "detail_slider", "version": "1"},
+  "calibration_refs": [{"id": "detail_intrinsics", "version": "1"}],
+  "conditions": {"dataset": "authored_lab"},
+  "skills": ["lab_measure"]
+}

@@ -1,0 +1,15 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "robot-rsi-synthetic-adapter"
+version = "0.1.0"
+requires-python = ">=3.12,<3.14"
+dependencies = ["robot-rsi-harness==0.1.0"]
+
+[project.entry-points."robot_rsi.adapters"]
+synthetic_fixture = "synthetic_adapter:factory"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/synthetic_adapter"]

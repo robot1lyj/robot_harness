@@ -1,0 +1,4 @@
+{
+  "detail": {"width": 12, "height": 8, "rgb": [190, 30, 20], "captured_at": 1700000000.0, "height_mm": 250, "source": "authored synthetic recording"},
+  "survey": {"width": 4, "height": 3, "rgb": [20, 30, 190], "captured_at": 1700000001.0, "height_mm": 200, "source": "authored synthetic recording"}
+}

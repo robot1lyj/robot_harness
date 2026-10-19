@@ -1,0 +1,63 @@
+{
+  "qualification": "authored legacy fixture; current Sol source reading, not blind project mining",
+  "source_root": "../legacy_lab",
+  "no_harness_manifest_in_source": true,
+  "items": [
+    {
+      "capability": "camera.capture",
+      "source": "capture.py",
+      "symbol": "read_recording",
+      "inputs": "view: detail|survey",
+      "outputs": "recorded pixel/size/time metadata",
+      "dependencies": [
+        "stdlib json/importlib.resources",
+        "recordings.json"
+      ],
+      "evidence": "tests/test_existing.py::test_recordings_have_different_resolution",
+      "gap": "authored recording only; no live SDK owner, stereo or fresh acquisition",
+      "integration": "thin adapter with CameraObservation, artifact and original capture timestamp",
+      "source_sha256": "fa79df0d952d3000c5a7ed9c8b699b2c1c6892931b7e99577aed8a6fe3172352"
+    },
+    {
+      "capability": "kinematics.fk",
+      "source": "geometry.py",
+      "symbol": "tip_mm",
+      "inputs": "position_mm,height_mm",
+      "outputs": "[x,y,z] millimetres",
+      "dependencies": [
+        "configured fixture height"
+      ],
+      "evidence": "tests/test_existing.py::test_slider_known_point_and_range",
+      "gap": "one-axis known formula; no IK, collision or device state",
+      "integration": "include source unchanged; thin m/mm and named frame/model mapping",
+      "source_sha256": "bfe162412de3a0169163405a2adc4db53d886d5f219a9a9253866af125146009"
+    },
+    {
+      "capability": "assets",
+      "source": "recordings.json",
+      "symbol": "detail/survey",
+      "inputs": "view key",
+      "outputs": "size/rgb/capture time/fixture height",
+      "dependencies": [],
+      "evidence": "existing fixture test + adapter schema checks",
+      "gap": "synthetic parameters, no physical calibration",
+      "integration": "versioned RobotModel/CalibrationRecord in original Store",
+      "source_sha256": "21459b6679f679830c6eadc0e5057bb1918c2d7166458b4b275c802a9659362e"
+    },
+    {
+      "capability": "manual_alignment_and_motion",
+      "source": "operator_app.py",
+      "symbol": "align_and_move",
+      "inputs": "not defined",
+      "outputs": "NotImplementedError",
+      "dependencies": [
+        "operator alignment",
+        "missing hardware owner and collision checks"
+      ],
+      "evidence": "source read only; not executed/imported",
+      "gap": "unfinished, not an installed capability",
+      "integration": "excluded from wheel; no fake control owner",
+      "source_sha256": "fb0fa357fd0d4ef94e56ca890c234afee626e08ef1bb8ccf950bcca5a54085da"
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "station": "offline_lab",
+  "namespace": "recording_example",
+  "robot": null,
+  "host": {"adapter": {"factory": "legacy_lab", "options": {"default_ports": false}}, "cameras": null, "depth": null}
+}

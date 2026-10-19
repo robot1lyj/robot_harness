@@ -1,0 +1,9 @@
+{
+  "name":"fixture_fk", "version":"1.0.0", "kind":"code", "category":"computation",
+  "description":"Compute a known synthetic FK result without a robot or camera.",
+  "qualification":"synthetic", "resources":[], "requires":{"kinematics.fk":1},
+  "failure":"Keep calculation errors as evidence; no device actions.",
+  "keywords":["FK","kinematics","运动学"],
+  "input_model":"synthetic_adapter:FKParameters", "output_model":"robot_rsi.skill_models:SkillResult",
+  "entry":"synthetic_adapter:check_fk"
+}

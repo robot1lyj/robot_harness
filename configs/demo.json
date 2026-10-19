@@ -1,0 +1,12 @@
+{
+  "robot": "mock",
+  "station": "demo_station",
+  "namespace": "mock-demo",
+  "state_root": "~/.local/state/robot-rsi",
+  "workspace": {
+    "title": "Synthetic demo",
+    "constraints": [
+      "Offline mock only; results are synthetic."
+    ]
+  }
+}

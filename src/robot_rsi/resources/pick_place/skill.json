@@ -1,0 +1,32 @@
+{
+  "name": "pick_place",
+  "version": "0.2.0",
+  "kind": "code",
+  "category": "manipulation",
+  "description": "抓取物体并放到指定区域，包含抓取与放置验证。",
+  "qualification": "provider_dependent; physical validation not established",
+  "resources": [
+    "manipulator"
+  ],
+  "requires": {
+    "scene.observe": 1,
+    "manipulation.plan_pick_place": 1,
+    "manipulation.execute_stage": 1,
+    "outcome.verify": 1
+  },
+  "failure": "bounded retry, then structured assistance checkpoint",
+  "keywords": [
+    "抓取",
+    "抓放",
+    "放置",
+    "放到",
+    "搬运",
+    "pick",
+    "place",
+    "grasp",
+    "move"
+  ],
+  "input_model": "robot_rsi.skill_models:PickPlaceParameters",
+  "output_model": "robot_rsi.skill_models:SkillResult",
+  "entry": "robot_rsi.skills:pick_place"
+}

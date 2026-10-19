@@ -1,0 +1,18 @@
+{
+  "robot": null,
+  "station": "example_station",
+  "state_root": "~/.local/state/robot-rsi",
+  "host": {
+    "adapter": {
+      "factory": "synthetic_fixture",
+      "options": {
+        "camera": false
+      }
+    },
+    "model_ref": {
+      "id": "fixture_model",
+      "version": "v1"
+    }
+  },
+  "namespace": "robot_only"
+}
