@@ -121,9 +121,7 @@ def build_task_context(runtime, args):
     record = runtime.task_memory._load(args.task_id)
     result = {
         "scene_binding": runtime.scenes.read(BindingRead(), args.task_id),
-        "workspace": runtime.workspace.brief(
-            runtime.robot, bindings.camera, runtime.skill_descriptors(bindings)
-        ),
+        "workspace": runtime.workspace_brief(args.task_id, bindings),
         "checkpoint": checkpoint,
         "skill_candidates": cards["skills"],
         "selected_skill": selected,

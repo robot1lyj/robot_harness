@@ -262,9 +262,9 @@ async def test_roles_frames_and_binding_evidence(profile):
         )
 
 
-def test_reusable_skill_imports_only_contracts():
+def test_reference_task_imports_only_contracts_and_execution_host():
     # Architectural boundary, so a future device shortcut fails independently of happy-path tests.
-    path = Path(__file__).parents[1] / "src/robot_rsi/skills.py"
+    path = Path(__file__).parents[1] / "src/robot_rsi/builtin_tasks/pick_place.py"
     modules = []
     for node in ast.walk(ast.parse(path.read_text())):
         if isinstance(node, ast.ImportFrom):
@@ -278,4 +278,8 @@ def test_reusable_skill_imports_only_contracts():
         "skill_models",
         "json",
         "importlib.resources",
+        "pydantic",
+        "operations",
+        "storage",
+        "runtime",
     }

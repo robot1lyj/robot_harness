@@ -139,3 +139,7 @@ previous 复用依赖/条件未变且覆盖所需合同的旧证据；候选说�
 
 可运行例子见[旧项目接入与跨进程复用](../examples/project_adapter/README.md)。接入分析不是运行记忆，
 离线试用不是现场标定、就绪或运动验证；原生 Agent 自主绑定需在实际部署环境单独验证。
+
+## 同项目资料与框架反馈
+
+宿主 profile.project 沿现有角色选择用途；project_read 找最多三项资料或按键读正文。issue_create 保存有依据的处理位置与最小复现，issue_get 读取短状态或关联详情。答复导入、安装核对与选定验证仅宿主 CLI，沿原 Store/任务版本/送达游标；字段、命令与完整独立安装例子见 [项目工作流](project-workflow.md)。

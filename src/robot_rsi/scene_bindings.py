@@ -378,7 +378,7 @@ class SceneBindings:
                     raise HarnessError(
                         "unsafe_binding_trial", "Trial must match the installed read/compute port"
                     )
-                from .runtime import TOOLS
+                from .tool_specs import TOOLS
 
                 arguments = TOOLS[trial.tool][0].model_validate(trial.arguments)
                 try:

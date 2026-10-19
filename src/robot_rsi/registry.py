@@ -178,7 +178,7 @@ class Registry:
         if manifest.kind == "code" and not inspect.iscoroutinefunction(entry):
             raise HarnessError("invalid_skill", "Code entry must be an async function")
         if manifest.kind == "agent_workflow":
-            from .runtime import TOOLS
+            from .tool_specs import TOOLS
 
             if manifest.entry not in TOOLS:
                 raise HarnessError("invalid_skill", "Workflow entry must use an existing tool")

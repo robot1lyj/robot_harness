@@ -36,3 +36,9 @@ Selection is data, not executable code. Saving requires host-produced matching e
 already established, attach_to_task is allowed only before any operation and before a binding is fixed.
 Read summary/changes on reuse; submit only changed roles to validation with previous=the old reference.
 Older task references and unresolved operations are retained; the binding does not authorize replay.
+
+For same-project local code improvement, three-mode evaluation, release, fresh-process reuse and
+issue/reply exchange, follow [project workflow](../../docs/project-workflow.md).
+`improve_demo.py --root NEW_DIRECTORY` performs the documented literal patch on a local skill
+package while installed Harness code stays frozen. Maintainer replies are explicitly simulated.
+This deterministic protocol replay does not claim native Agent autonomy or a real framework release.

@@ -1,6 +1,7 @@
 """Small host-only creation entry; candidates still require independent evaluation."""
 
 import json
+from functools import lru_cache
 from pathlib import Path
 
 from .registry import Manifest
@@ -72,3 +73,10 @@ def installed_packages():
         for path in files("robot_rsi").joinpath("resources").iterdir()
         if path.joinpath("skill.json").is_file()
     ]
+
+
+@lru_cache(maxsize=1)
+def installed_code_versions():
+    """Distribution defaults only; workspace-selected versions belong to Registry."""
+    manifests = [json.loads(path.joinpath("skill.json").read_text()) for path in installed_packages()]
+    return {m["name"]: m["version"] for m in manifests if m["kind"] == "code"}

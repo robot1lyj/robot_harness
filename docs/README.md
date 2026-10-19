@@ -11,6 +11,7 @@
 | 查能力接口、数据语义和扩展工厂 | [接口参考](interfaces.md) |
 | 理解运行中的工作区资料管理 | [workspace_context](../src/robot_rsi/resources/workspace-context/SKILL.md) |
 | 理解任务检查点、恢复和归档 | [task_memory](../src/robot_rsi/resources/task-memory/SKILL.md) |
+| 在同项目改进本地技能、独立比较与查看框架答复 | [项目工作流](project-workflow.md) |
 
 ## 参考案例
 

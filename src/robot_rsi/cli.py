@@ -26,7 +26,30 @@ async def run_command(args, profile):
         if args.command == "tools":
             output(runtime.tools())
             return 0
-        if args.command == "call":
+        if args.command == "project":
+            from .project import ProjectRead
+
+            if profile.project is None:
+                raise HarnessError("project_required", "Host has not selected a project")
+            result = {"ok": True, "result": runtime.project.read(
+                ProjectRead(key=args.key, query=args.query)
+            ) if args.key or args.query else runtime.workspace_brief().get("project")}
+        elif args.command == "feedback":
+            from .feedback import IssueGet
+
+            if args.action == "export":
+                result = runtime.feedback.get(IssueGet(issue_id=args.issue_id))
+                Path(args.output).write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n")
+            elif args.action == "import-reply":
+                result = runtime.feedback.import_reply(json.loads(Path(args.file).read_text()))
+            elif args.action == "attest":
+                result = runtime.feedback.attest(args.reply_id, args.task_id, args.operation_id, args.note)
+            else:
+                result = runtime.feedback.get(IssueGet(issue_id=args.issue_id, kind=args.kind,
+                                                      limit=args.limit, cursor=args.cursor))
+            output(result)
+            return 0
+        elif args.command == "call":
             result = await runtime.invoke(
                 args.name, json.loads(args.arguments), task_id=args.task_id
             )
@@ -98,6 +121,27 @@ def main():
     adapter.add_argument("action", choices=["list"])
 
     sub.add_parser("tools")
+    project = sub.add_parser("project", help="Host purpose entry over an existing project and role")
+    project.add_argument("--purpose", choices=["onboarding", "run", "improve", "evaluate"])
+    project.add_argument("--key")
+    project.add_argument("--query", default="")
+    feedback = sub.add_parser("feedback", help="Host-only issue/reply file exchange; no network")
+    actions = feedback.add_subparsers(dest="action", required=True)
+    export_issue = actions.add_parser("export")
+    export_issue.add_argument("issue_id")
+    export_issue.add_argument("--output", required=True)
+    import_reply = actions.add_parser("import-reply")
+    import_reply.add_argument("file")
+    status = actions.add_parser("status")
+    status.add_argument("issue_id", nargs="?")
+    status.add_argument("--kind", choices=["all", "updates", "pending"], default="all")
+    status.add_argument("--limit", type=int, default=3)
+    status.add_argument("--cursor")
+    attest = actions.add_parser("attest")
+    attest.add_argument("reply_id")
+    attest.add_argument("--task-id", required=True)
+    attest.add_argument("--operation-id", required=True)
+    attest.add_argument("--note", required=True)
     sub.add_parser(
         "config-check",
         help="Validate host bindings without opening a runtime or connecting hardware",
@@ -200,6 +244,11 @@ def main():
             if args.profile
             else Profile()
         )
+        if args.command == "project" and args.purpose:
+            if profile.project is None:
+                raise HarnessError("project_required", "Configure the existing project in the host profile")
+            profile = profile.model_copy(update={"project": profile.project.model_copy(
+                update={"purpose": args.purpose})})
         if args.command == "adapter":
             from .adapters import factories
 
@@ -286,7 +335,7 @@ def main():
             return
         if args.command == "agent":
             if args.action == "recipe":
-                from .recipe import recipe_entry
+                from .builtin_tasks.pick_place import recipe_entry
 
                 output(
                     asyncio.run(recipe_entry(profile, args.task_id, json.loads(args.parameters)))

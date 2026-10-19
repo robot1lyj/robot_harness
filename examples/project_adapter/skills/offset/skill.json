@@ -1,0 +1,7 @@
+{
+  "name": "lab_offset", "version": "1.0.0", "kind": "code", "category": "calculation",
+  "description": "Calculate a slider tip from metres and a local millimetre offset",
+  "qualification": "authored_offline_calculation", "resources": [],
+  "requires": {"kinematics.fk": 1}, "keywords": ["slider", "offset", "calculation"],
+  "input_model": "skill:Parameters", "output_model": "skill:Result", "entry": "skill:run"
+}

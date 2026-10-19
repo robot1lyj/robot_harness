@@ -57,20 +57,48 @@ Agent 提交任务或工具调用。Runtime 解析参数及当前绑定，技能
 
 ## 代码导航
 
+发布目录的主要结构如下；Python 根包中的其余模块按职责列在后表。
+
+```text
+robot_harness/
+├── README.md                     框架用途、效率与开始使用
+├── pyproject.toml / uv.lock       安装依赖、CLI 和扩展入口
+├── src/robot_rsi/                 框架实现
+│   ├── tool_specs.py             共享工具定义
+│   ├── runtime.py                统一调用与装配
+│   ├── builtin_tasks/            内置参考任务
+│   │   └── pick_place.py         抓放参数、执行和完整目标配方
+│   ├── resources/                随包分发的技能说明与 manifest
+│   │   ├── workspace-context/    工作区资料管理
+│   │   ├── task-memory/          任务检查点、恢复与归档
+│   │   └── pick_place/           抓放参考技能的描述与注册信息
+│   └── …                         执行、合同、记忆等模块，见下表
+├── skills/robot-onboarding/       给接入方 Agent 的基础技能
+├── docs/                         公共架构、接口、接入、工作流和性能说明
+├── examples/                     独立适配、已有项目接入与局部改进示例
+├── configs/                      配置样例
+└── tests/                        通用合同、运行流程及模块边界测试
+```
+
+Python wheel 安装 `src/robot_rsi` 的运行模块和随包资源；接入说明、公共指南与示例由产品仓库提供，外部适配/技能包独立安装。使用方项目保存自己的设备配置、扩展代码与运行记录。
+
 当前采用一个 Python 根包组织模块。下表是实际职责导航，不表示已经拆成多个独立服务。
 
 | 职责 | 主要源码入口 | 负责的事情 |
 |---|---|---|
 | 工具与进程入口 | [cli.py](../src/robot_rsi/cli.py)、[mcp_server.py](../src/robot_rsi/mcp_server.py)、[server.py](../src/robot_rsi/server.py) | CLI、MCP 和 HTTP 的协议入口 |
+| 共享工具定义 | [tool_specs.py](../src/robot_rsi/tool_specs.py) | 静态 schema、说明与工具集合；供运行器、注册校验和绑定试调用共用，实际分发仍只有 Runtime |
 | 统一调用与宿主装配 | [runtime.py](../src/robot_rsi/runtime.py)、[host.py](../src/robot_rsi/host.py)、[adapters.py](../src/robot_rsi/adapters.py) | 工具分发、构造端口、资源生命周期和扩展工厂 |
 | 公共合同与能力绑定 | [contracts.py](../src/robot_rsi/contracts.py)、[capabilities.py](../src/robot_rsi/capabilities.py)、[resources.py](../src/robot_rsi/resources.py)、[scene_bindings.py](../src/robot_rsi/scene_bindings.py) | 参数和数据模型、能力组合、资源/运动学/标定、场景选择与固定引用 |
 | 操作与任务记录 | [operations.py](../src/robot_rsi/operations.py)、[task_memory.py](../src/robot_rsi/task_memory.py)、[task_snapshot.py](../src/robot_rsi/task_snapshot.py) | 操作生命周期、任务检查点、整体结果、归档和快照 |
 | Agent 会话与上下文 | [agent_host.py](../src/robot_rsi/agent_host.py)、[agent_client.py](../src/robot_rsi/agent_client.py)、[agent_state.py](../src/robot_rsi/agent_state.py)、[task_context.py](../src/robot_rsi/task_context.py) | 客户端连接、会话接续、援助材料和必要信息装配 |
 | 工作区、记忆和证据 | [workspace.py](../src/robot_rsi/workspace.py)、[memory.py](../src/robot_rsi/memory.py)、[storage.py](../src/robot_rsi/storage.py)、[evidence.py](../src/robot_rsi/evidence.py) | 工作区资料、适用经验、作用域存储和证据导出 |
+| 项目资料与反馈 | [project.py](../src/robot_rsi/project.py)、[feedback.py](../src/robot_rsi/feedback.py) | 按宿主用途读取显式项目材料；在原 Store 中保存问题/答复，按依赖显示短状态并分页读取 |
 | 技能与版本管理 | [registry.py](../src/robot_rsi/registry.py)、[skill_management.py](../src/robot_rsi/skill_management.py)、[catalog.py](../src/robot_rsi/catalog.py)、[experience.py](../src/robot_rsi/experience.py)、[installation.py](../src/robot_rsi/installation.py) | 技能目录、包注册/启用、候选评估关联、发布/回退和安装身份 |
+| 参考任务与通用结果 | [builtin_tasks/pick_place.py](../src/robot_rsi/builtin_tasks/pick_place.py)、[skill_result.py](../src/robot_rsi/skill_result.py) | 前者集中抓放参数、执行和完整目标配方；后者是与具体任务无关的结果合同 |
 | 感知与内置实现 | [perception.py](../src/robot_rsi/perception.py)、[cameras.py](../src/robot_rsi/cameras.py)、[depth.py](../src/robot_rsi/depth.py)、[depth_backends.py](../src/robot_rsi/depth_backends.py)、[robots.py](../src/robot_rsi/robots.py) | 相机/深度合同和实现、内置设备路径；具体后端可由外部适配包提供 |
 
-`resources.py` 保存资源与计算合同；同名的 `resources/` 目录保存随包分发的技能文件。`skills.py`、`skill_models.py`、`recipe.py` 当前主要承载内置抓放参考任务；`pick_place` 意为抓取并放置，是具体任务技能。技能管理和统一运行由上表对应模块承担，接入新任务时使用扩展入口。
+`resources.py` 保存资源与计算合同；同名的 `resources/` 目录保存随包分发的技能文件。`builtin_tasks/pick_place.py` 是内置抓放参考任务，`pick_place` 意为抓取并放置。`skills.py`、`recipe.py`、`skill_models.py` 保留旧导入与 manifest 引用的薄导出，通用结果可直接从 `skill_result` 导入。新增技能通过扩展包和 Registry 接入，无须修改参考任务目录。
 
 这些参考实现帮助验证框架调用链。具体任务逻辑、模拟夹具与通用机制应保持清楚的边界；源码导航反映当前文件职责，不将某个参考任务当作所有机器人任务的定义。
 
@@ -90,6 +118,8 @@ Agent 提交任务或工具调用。Runtime 解析参数及当前绑定，技能
 技能目录先提供简短描述，选中后读取完整说明。任务固定技能、能力及所需资产的版本；记忆保留来源和适用条件，当前设备状态从观测获取。长期记录可以累积，当前上下文只读取所需部分。
 
 本地实现可在用户项目中改进，形成候选后进行相应验证，再在任务边界启用固定版本。框架维护方负责公共接口和共同机制，使用方负责具体算法、任务方法及现场适配。
+
+同项目资料的用途入口、候选改进及问题/答复文件交换见[项目工作流](project-workflow.md)。Runtime 将 Registry 的实际版本交给 Memory，任务固定版本在召回时优先；直接使用 Memory 的默认值从随包代码技能元数据缓存取得，不加载任务执行代码。内置 retry_pick_place、已知失败映射和 pick_place_v1 配方仍为参考任务专用支持，不代表任意任务已有自动恢复。
 
 ## 文档分工
 

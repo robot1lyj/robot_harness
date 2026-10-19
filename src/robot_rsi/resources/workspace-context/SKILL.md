@@ -8,6 +8,7 @@ description: 进入机器人工作区、查找相关资料或更新工作区备�
 运行技能 ID：`workspace_context`。目标是取得下一步所需信息，然后继续任务。
 
 - 初次进入工作区调用 `workspace_read`，获得环境、必要约束和资料入口。当前上下文已有这些信息时直接使用；有相关变更再读取。
+- 同项目资料用 `project_read` 按用途找卡片、按键读正文；按合同区分输入、本地实现和公共缺口。公共问题用 `issue_create` 留最小复现，`issue_get` 读相关答复；收到答复不代表已安装或验证。
 - 有资料缺口时，用 `workspace_read(query="主题")` 找备注卡片，再用 `workspace_read(key="备注键")` 读取需要的正文。已知键则直接读取。
 - 按当前任务用 `skills_list(query="目标")` 找适用技能，选中后调用 `skill_describe(name="技能 ID")`。照其 entrypoint 继续；已有足够信息就执行下一步。
 - 需要场景选择时先用 `binding_read` 读已存引用和相关变化；适用即复用。缺项才以所需合同调用 `binding_candidates`，按目标选 provider/资源/资产并写理由；`binding_validate` 静态核对与明确的只读/计算试用，`binding_save` 引用其宿主证据。新任务用 binding_ref，首次执行前也可保存时 attach_to_task；已固定的任务不换绑定。变化仅重验受影响端口，不能自报通过。

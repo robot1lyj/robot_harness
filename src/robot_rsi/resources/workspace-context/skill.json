@@ -1,6 +1,6 @@
 {
   "name": "workspace_context",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "kind": "agent_workflow",
   "category": "foundation",
   "description": "进入机器人工作区、查找相关资料或更新工作区备注时，恢复下一步所需信息。",

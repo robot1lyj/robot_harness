@@ -120,6 +120,24 @@ class WorkspaceConfig(Contract):
     )
 
 
+ProjectPurpose = Literal["onboarding", "run", "improve", "evaluate"]
+
+
+class ProjectMaterial(Contract):
+    key: Identifier
+    title: str = Field(min_length=1, max_length=160)
+    path: str = Field(min_length=1, max_length=240)
+    purposes: list[ProjectPurpose] = Field(min_length=1, max_length=4)
+
+
+class ProjectConfig(Contract):
+    id: Identifier
+    root: str
+    purpose: ProjectPurpose = "run"
+    common_key: Identifier
+    materials: list[ProjectMaterial] = Field(max_length=1000)
+
+
 class TaskLimits(Contract):
     tool_calls: int = Field(default=40, ge=1, le=1000)
     duration_s: float = Field(default=180, gt=0, le=3600, allow_inf_nan=False)
@@ -172,6 +190,7 @@ class Profile(Contract):
     mock_grasp_failures: int = Field(default=0, ge=0, le=10)
     host: HostConfig = Field(default_factory=HostConfig)
     workspace: WorkspaceConfig = Field(default_factory=WorkspaceConfig)
+    project: ProjectConfig | None = None
     task_limits: TaskLimits = Field(default_factory=TaskLimits)
     active_task_id: Identifier | None = None
     memory_maintenance: MemoryMaintenance = Field(default_factory=MemoryMaintenance)

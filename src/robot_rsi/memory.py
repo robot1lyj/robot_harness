@@ -7,11 +7,14 @@ from .storage import Store, uid
 
 
 class Memory:
-    def __init__(self, store: Store, *, capabilities: list[dict] | None = None):
+    def __init__(self, store: Store, *, capabilities: list[dict] | None = None,
+                 skill_versions: dict[str, str] | None = None):
         self.store = store
-        from .skills import PICK_PLACE_VERSION
+        if skill_versions is None:
+            from .skill_management import installed_code_versions
 
-        self.skill_versions = {"pick_place": PICK_PLACE_VERSION}
+            skill_versions = installed_code_versions()
+        self.skill_versions = dict(skill_versions)
         self.capabilities = capabilities
 
     def remember(self, args: MemoryRemember) -> dict:
