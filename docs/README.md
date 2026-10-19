@@ -6,6 +6,7 @@
 |---|---|
 | 了解框架并开始使用 | [项目 README](../README.md) |
 | 理解模块职责、调用关系和源码位置 | [项目架构与代码导航](architecture.md) |
+| 了解效率方法、已有结果与测量范围 | [性能方法与样例结果](performance.md) |
 | 接入已有机器人项目、SDK 或算法 | [接入指南](integration.md)、[robot-onboarding](../skills/robot-onboarding/SKILL.md) |
 | 查能力接口、数据语义和扩展工厂 | [接口参考](interfaces.md) |
 | 理解运行中的工作区资料管理 | [workspace_context](../src/robot_rsi/resources/workspace-context/SKILL.md) |

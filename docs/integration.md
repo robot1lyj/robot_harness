@@ -53,6 +53,23 @@ schema 和具体字段见[场景工具合同](interfaces.md#场景选择工具�
 
 “如何接入机器人”“如何整理任务记忆”属于工作流技能；“按已验证步骤抓放物体”属于代码技能。FK、IK、标定求解器和驱动属于能力实现包。机器人型号与现场参数属于配置和数据。只有需要 Agent 安排多步标定时，才另加标定工作流技能。
 
+## 连接 Agent 或应用
+
+`profile.json` 是 Harness 的运行配置，选择已安装适配器及参数、资源与资产版本、存储位置等。`config-check` 只校验配置和适配工厂参数；设备连接及真实输入在运行时按需验证。
+
+一般 Agent 客户端使用 MCP：客户端发现工具说明，模型选择工具，客户端提交调用，Harness 执行后返回结果。当前 `mcp` 子命令使用 stdio，由客户端启动一个本地进程并读写其标准输入/输出。
+
+在客户端的 MCP 设置中填写以下启动信息，替换为自己的绝对路径；具体配置文件的外层格式由客户端决定：
+
+```text
+command: uv
+args: ["--directory", "/absolute/path/robot_harness", "run", "--no-sync", "robot-rsi", "--profile", "/absolute/path/profile.json", "mcp"]
+```
+
+这里的目录必须有框架及适配包已经安装好的环境；`--no-sync` 直接复用该环境。客户端若找不到 `uv`，将 command 填为本机 `uv` 的绝对路径。模型和登录由客户端设置；`mcp` 本身只提供工具，不会启动一次机器人任务。连接后可先调用 `workspace_read` 或 `skills_list` 查看当前信息，再按任务选择工具。
+
+CLI 适合终端或脚本调用；HTTP API 适合自建程序使用。这些入口调用同一 Runtime。当前 `serve` 服务监听 `127.0.0.1`，工具接口使用 Bearer token，凭据从环境变量 `ROBOT_RSI_TOKEN` 读取；它是独立 HTTP API，不是 MCP 的 HTTP 传输。只选当前需要的入口，不必同时启动三种服务。
+
 ## 可复现的离线接入
 
 ```bash
