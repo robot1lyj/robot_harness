@@ -21,6 +21,7 @@ from .contracts import (
 from .device_validation import confirm_command, validate_command, validate_state
 from .environment import environment_summary
 from .feedback import Feedback
+from .guides import read_guide
 from .host import resolve_host
 from .memory import Memory
 from .operations import Operations, operation_resources
@@ -552,6 +553,8 @@ class Runtime:
             return self.project.read(args)
         if name == "project_files":
             return self.project.files(args)
+        if name == "harness_read":
+            return read_guide(args, self.task_memory.installation_digest)
         if name == "issue_create":
             return self.feedback.create(args)
         if name == "issue_get":

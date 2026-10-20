@@ -30,6 +30,7 @@ from .contracts import (
     WorkspaceRead,
 )
 from .feedback import IssueCreate, IssueGet
+from .guides import HarnessRead
 from .project import ProjectFiles, ProjectRead
 from .resources import (
     CalibrationQuery,
@@ -42,6 +43,7 @@ from .resources import (
 from .scene_bindings import BindingRead, BindingSave, BindingValidate, CandidateQuery
 
 TOOLS = {
+    "harness_read": (HarnessRead, "Read installed integration/interfaces public guide text with source identity and next_offset; not robot capability evidence"),
     "project_files": (ProjectFiles, "List one selected project directory or read one UTF-8 source; use next_offset to continue; onboarding/improve only"),
     "project_read": (ProjectRead, "Read purpose-selected project material cards or one body; host fixes purpose"),
     "issue_create": (IssueCreate, "Save a reasoned local/framework issue with selected evidence; no automatic diagnosis"),

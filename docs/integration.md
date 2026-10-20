@@ -1,5 +1,37 @@
 # 接入自己的机器人项目与能力
 
+## Source, usage target and an actionable plan
+
+For a planning request, pass the read-only legacy root and selected usage destination separately:
+
+```bash
+robot-rsi agent run --project /path/to/legacy --usage-root /path/to/robot-use "这是我的机器人项目，给我一个能开始实施的接入方案。"
+robot-rsi mcp --project /path/to/legacy --usage-root /path/to/robot-use
+```
+
+`project.usage_root` is optional in an existing profile; the same flag can override it at these
+entries. It names a target only: no directory/environment is created, scanned or granted write
+access, and project_files stays inside the source root. Omission means not_selected. The environment
+view separates source_root/usage_root, selected_not_inspected target qualification, current Python
+and installed digest from the task's fixed installation reference. An existing target path does
+not establish installed packages or device readiness. Original requests remain task goals.
+
+robot_onboarding 1.4.1 delivers four sourced decisions in the Chinese answer: (1) usage environment,
+conditions/dependencies/fixed installation, (2) selected capability destinations and maintenance
+locations, (3) actual contract fields/units/frames/time/status mappings and gap ownership,
+(4) first runnable goal/input, minimum artifacts, call entry, verifiable output and remaining work.
+A plan can finish with a sourced note; an implementation request still needs actual artifacts
+and calls, or a precise unfinished handoff if the host lacks development tools.
+
+`harness_read` reads only the installed `integration` or `interfaces` guide, with character
+offset/limit and next_offset, full-text SHA, canonical_source, distribution/version and installed
+digest and direct installation origin when recorded by the installer (otherwise null). These two
+bodies are force-included from public docs when building the wheel; no second
+canonical copy is maintained. A development install without the packaged resources returns
+guide_not_installed; it never falls back to checkout/development files. `tool_describe` exposes
+actual input schemas; tools_list/capabilities_list/resources_list describe host availability
+without connecting devices. Public framework contracts are not evidence of robot implementations.
+
 ## Independent environment and classified integration
 
 Use one Harness usage directory for local extension development/tests, uv configuration,
@@ -44,16 +76,19 @@ MCP initialize gives configuration identity, purpose, qualification and detail e
 creating another Runtime. Counts/cards and original query tools bound the view; it is configuration,
 not a health check or live readiness claim. Ordinary runtime does not repeat robot_onboarding.
 
-The English robot_onboarding 1.3.0 workflow permits local candidate edits/build/tests only for
+The English robot_onboarding 1.4.1 workflow permits local candidate edits/build/tests only for
 an explicit implementation request with host-authorized development tools. Ordinary inspection
 stays read-only. The built-in source-only client still has no shell or source-write tools; an
 external coding host keeps its own authorized tools. No prompt grants installation/device rights.
 Existing fixed workflow versions remain immutable. On an existing skill pool, the host explicitly
 runs `robot-rsi --profile PROFILE skill discover` and then
-`robot-rsi --profile PROFILE skill enable robot_onboarding 1.3.0` to select the new version for
+`robot-rsi --profile PROFILE skill enable robot_onboarding 1.4.1` to select the new version for
 new work; existing task pins retain their version.
 
-Inspection ends with sourced findings/mapping and advice. Authorized implementation continues
+Inspection ends with sourced findings/mapping and advice. Save short decisions and sources
+within workspace_note's schema; split topics when needed and keep long explanations in the final
+answer. Reference only successfully saved keys in task_finish, and archive only after finish succeeds.
+Correct failed predecessor calls before advancing. Authorized implementation continues
 through real artifacts, fixed uv installation and necessary calls/validation; a saved plan alone
 does not complete it. Similar device models are discovery clues: reuse follows actual contracts,
 SDK/dependencies and applicable evidence, while instance configuration/calibration stay local.

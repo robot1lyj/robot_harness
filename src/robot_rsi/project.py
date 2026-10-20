@@ -28,7 +28,7 @@ class ProjectFiles(Contract):
 EXCLUDED = {".git", ".codex", ".rsi", ".venv", "venv", "node_modules", "__pycache__", ".ssh", ".env", "auth.json"}
 
 
-def source_profile(root, *, state_root=None):
+def source_profile(root, *, state_root=None, usage_root=None):
     """Minimal host-selected scope; no adapter, fabricated resources or project edits."""
     import os
 
@@ -42,7 +42,8 @@ def source_profile(root, *, state_root=None):
     return Profile(role="development", station="source-project", namespace=identity,
                    state_root=state_root or os.environ.get("ROBOT_RSI_STATE_ROOT", Profile().state_root),
                    robot=None, host={"cameras": None, "depth": None},
-                   project={"id": identity, "root": str(path), "purpose": "onboarding"},
+                   project={"id": identity, "root": str(path), "purpose": "onboarding",
+                            "usage_root": str(usage_root) if usage_root is not None else None},
                    workspace={"title": path.name, "purpose": "Read-only project inspection"},
                    task_limits={"duration_s": 600, "tool_calls": 80})
 
@@ -135,6 +136,8 @@ class Project:
             return None
         return {"id": self.config.id, "purpose": self.config.purpose,
                 "root": str(self.root), "source_access": "project_files" if self.can_read_sources else None,
+                "usage_root": self.config.usage_root,
+                "usage_environment": "selected_not_inspected" if self.config.usage_root else "not_selected",
                 "common": self.common, "installation_digest": installation_digest,
                 "skill_versions": skills, **self.read(ProjectRead()),
                 "next": ["binding_read", "skills_list", "issue_get"]}

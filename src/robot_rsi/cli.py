@@ -9,7 +9,7 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
-from .contracts import HarnessError, Profile, StereoCalibration
+from .contracts import HarnessError, Profile, ProjectConfig, StereoCalibration
 from .depth import import_stereo
 from .memory import Memory
 from .operations import TERMINAL
@@ -149,6 +149,7 @@ def main():
     sub.add_parser("demo")
     mcp = sub.add_parser("mcp", help="Run stdio MCP for one host-selected memory scope")
     mcp.add_argument("--project", help="Read-only project scope without an adapter profile")
+    mcp.add_argument("--usage-root", help="Selected usage destination; no creation, inspection or added permissions")
     serve = sub.add_parser("serve", help="Run authenticated loopback HTTP")
     serve.add_argument("--port", type=int, default=8767)
     call = sub.add_parser("call", help="One-shot tool call; motion waits for its terminal outcome")
@@ -223,6 +224,7 @@ def main():
     run = actions.add_parser("run")
     run.add_argument("--task-id")
     run.add_argument("--project", help="Inspect this existing source root without an adapter profile")
+    run.add_argument("--usage-root", help="Selected usage destination; no creation, inspection or added permissions")
     run.add_argument("goal", nargs="?")
     recipe = actions.add_parser(
         "recipe", help="Explicit complete pick_place_v1 code goal; no model"
@@ -246,12 +248,18 @@ def main():
             if args.profile
             else Profile()
         )
-        if args.command == "mcp" and args.project:
-            if args.profile:
-                raise HarnessError("project_profile_conflict", "Use --project or --profile")
-            from .project import source_profile
+        if args.command == "mcp" or (args.command == "agent" and args.action == "run"):
+            if args.project:
+                if args.profile:
+                    raise HarnessError("project_profile_conflict", "Use --project or --profile")
+                from .project import source_profile
 
-            profile = source_profile(args.project)
+                profile = source_profile(args.project, usage_root=args.usage_root)
+            elif args.usage_root:
+                if profile.project is None:
+                    raise HarnessError("project_required", "Select a source project before a usage destination")
+                project = ProjectConfig.model_validate({**profile.project.model_dump(), "usage_root": args.usage_root})
+                profile = profile.model_copy(update={"project": project})
         if args.command == "project" and args.purpose:
             if profile.project is None:
                 raise HarnessError("project_required", "Configure the existing project in the host profile")
@@ -352,12 +360,6 @@ def main():
             from .agent_host import control_call, control_path, run_agent
 
             if args.action == "run":
-                if args.project:
-                    if args.profile:
-                        raise HarnessError("project_profile_conflict", "Use --project for source-only inspection or an existing --profile")
-                    from .project import source_profile
-
-                    profile = source_profile(args.project)
                 if not args.task_id and not args.goal:
                     raise HarnessError("goal_required", "Provide a request or an explicit task ID to resume")
                 args.task_id = args.task_id or uid("task")

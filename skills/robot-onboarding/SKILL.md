@@ -1,6 +1,6 @@
 ---
 name: robot-onboarding
-description: Inspect read-only legacy sources; reuse or extract capabilities into a host-selected independent Harness usage environment.
+description: Deliver a source-grounded integration plan with environment, capability destinations, concrete contract mappings and a first runnable task; implement when authorized and equipped.
 ---
 
 # Robot project onboarding

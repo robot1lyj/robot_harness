@@ -11,6 +11,12 @@ The legacy project/environment stays a read-only source by default. Capability p
 selected extracted modules, service contracts and versioned assets feed the independent usage
 environment; this is not a copy or in-place upgrade of the old application/.venv.
 
+Optional ProjectConfig.usage_root names the host-selected target, separate from the source root
+and current Python/installation. It creates nothing and changes neither scope nor source access.
+`guides.py` serves only two installed public guide resources; wheel force-includes canonical
+docs/integration.md and docs/interfaces.md. Native/MCP share the existing tool table for guide
+reads and original read-only directory/schema entries; there is no general filesystem/docs search.
+
 Robot RSI Harness 是连接通用 Agent 与机器人能力的运行框架。它组织任务、调用和记录；使用方项目提供具体设备、算法与任务方法。
 
 本文说明公共结构和源码入口。精确输入输出以安装版本的工具 schema 与 Python 合同为准，接入步骤见[接入指南](integration.md)。

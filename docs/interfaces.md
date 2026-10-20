@@ -1,5 +1,27 @@
 # 对象与能力接口
 
+## Installed contract mapping entry
+
+Use `harness_read(guide="interfaces")` for this installed guide and `tool_describe(name=...)`
+for a chosen tool's input schema; both are read-only. Follow returned character offsets.
+The table summarizes existing contract v1 fields; definitions/validators in the installed
+Python contract classes remain authoritative. A schema is distinct from an available provider.
+
+| Contract/tool | Mapping facts |
+|---|---|
+| kinematics.fk / FKRequest | model_ref={id,version}, arm, joints={named_joint:value}, base_frame, target_frame. Names/limits/units follow the selected RobotModel (prismatic metres, revolute radians); FK is computation, not sampled state or motion |
+| FKResult / Transform | model_ref, pose={target_frame,source_frame,matrix}, source, qualification. pose is T_base_target, a rigid 4×4 matrix with translations in metres and last row [0,0,0,1]. State the source-to-target frame convention and any unit conversion |
+| RobotModel | reference, resource_id, joints (id/kind/lower/upper/tolerance), manipulators (arm→joint names), frames, parameters, source, qualification; assets have fixed id/version and task references |
+| camera.capture / CameraObservation | id, camera, source, qualification, received_at and at least one image frame. ImageFrame needs stream_id, artifact_id, width, height, encoding (rgb8/mono8); frame_id, capture_time and intrinsics may be absent for qualified preview. Missing image data is a source gap; missing optional preview metadata is not automatically a framework gap |
+| CaptureTime | value_s, kind (unix/device_monotonic), clock_domain, optional uncertainty_s. Preserve acquisition provenance; receipt time cannot replace an unknown acquisition time. Precision/synchronization/depth have additional applicability requirements |
+| robot.state / RobotState | id, resource_id, model_ref, named joints, optional tools, capture_time, received_at, boot_id, epoch, source, qualification. A calculation or SDK function name does not supply measured feedback, restart identity or completion semantics |
+| task_run / task_finish | Execute an installed code skill with request_id, skill, parameters and current task identity/epoch. skill_describe supplies its input/output contract; finish the whole goal with actual operation/evidence refs, then archive. A plain check can be a code method without a new generic data capability |
+
+For each source distinguish direct fields, computable conversions, absent source/device data
+and unsupported public semantics; assign the missing part to its actual adapter/method,
+asset/configuration, source/device owner or specific framework change. Do not fabricate fields
+merely to make a source appear to implement a contract.
+
 ## Host environment facts
 
 Environment identity reuses `station/namespace`, with the original role and Store scope; project

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Annotated, Literal
 
 from pydantic import (
@@ -9,6 +10,7 @@ from pydantic import (
     ConfigDict,
     Field,
     TypeAdapter,
+    field_validator,
     model_validator,
 )
 
@@ -133,9 +135,23 @@ class ProjectMaterial(Contract):
 class ProjectConfig(Contract):
     id: Identifier = "project"
     root: str
+    usage_root: str | None = Field(default=None, min_length=1, max_length=4096)
     purpose: ProjectPurpose = "run"
     common_key: Identifier | None = None
     materials: list[ProjectMaterial] = Field(default_factory=list, max_length=1000)
+
+    @field_validator("usage_root")
+    @classmethod
+    def normalize_usage_root(cls, value):
+        if value is None:
+            return None
+        try:
+            path = Path(value).expanduser().resolve()
+            if path.exists() and not path.is_dir():
+                raise ValueError("usage_root must name a directory, not a file")
+        except OSError as exc:
+            raise ValueError("usage_root could not be resolved") from exc
+        return str(path)
 
 
 class TaskLimits(Contract):

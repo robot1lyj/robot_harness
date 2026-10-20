@@ -39,6 +39,10 @@ dev = [
 [tool.hatch.build.targets.wheel]
 packages = ["src/robot_rsi"]
 
+[tool.hatch.build.targets.wheel.force-include]
+"docs/integration.md" = "robot_rsi/resources/guides/integration.md"
+"docs/interfaces.md" = "robot_rsi/resources/guides/interfaces.md"
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]

@@ -85,6 +85,12 @@ are never overwritten. See [integration](docs/integration.md) for wheel installa
 Request actual adapter implementation only after deciding what should be integrated; the
 [onboarding workflow](src/robot_rsi/resources/robot-onboarding/SKILL.md) and public contracts guide it.
 
+For an actionable plan, add the separate target with `--usage-root /path/to/robot-use` and ask
+“这是我的机器人项目，给我一个能开始实施的接入方案。” The target is a host fact, not automatic
+installation or write permission. Installed `harness_read` and `tool_describe` make the public
+guides/contracts available on demand; the plan includes environment, destinations, field mappings
+and a first runnable task. See [source/target usage](docs/integration.md#source-usage-target-and-an-actionable-plan).
+
 ### 3. 让 Agent 调用框架
 
 Keep one Harness usage directory per robot for local extensions/tests, uv.lock/.venv,

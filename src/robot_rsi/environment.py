@@ -1,16 +1,25 @@
 """Environment facts projected from existing owners; never a second runtime or inventory."""
 
+import sys
+from pathlib import Path
+
 from .contracts import SkillQuery
+from .installation import installation_identity
 from .scene_bindings import BindingRead
 
 
 def configured_environment(profile):
     """Safe before MCP lifespan starts: configuration only, no factory or device discovery."""
     source_only = profile.robot is None and profile.host.adapter is None
+    project = profile.project
     return {
         "id": f"{profile.station}/{profile.namespace}",
         "role": profile.role,
         "project_id": profile.project.id if profile.project else None,
+        **({"source_root": str(Path(project.root).expanduser().resolve()),
+            "usage_root": project.usage_root,
+            "usage_environment": "selected_not_inspected" if project.usage_root else "not_selected"}
+           if project else {}),
         "purpose": profile.project.purpose if profile.project else "run",
         "qualification": "source_only" if source_only else "configured_only",
         "state": "configuration_only; physical availability not checked",
@@ -40,6 +49,9 @@ def environment_summary(runtime, task_id=None, bindings=None):
         **configured_environment(runtime.profile),
         "scope": runtime.store.scope,
         "installation_digest": execution.get("installation_digest") or runtime.task_memory.installation_digest,
+        **({"current_installation": {"python": installation_identity()["python"], "executable": sys.executable,
+                                     "digest": runtime.task_memory.installation_digest}}
+           if runtime.profile.project else {}),
         "tool_scope": {"source_read": runtime.project.can_read_sources,
                        "development_tools": "not provided by this Harness",
                        "execution": "installed capabilities and task permissions only"},

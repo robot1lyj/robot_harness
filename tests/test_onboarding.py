@@ -1,6 +1,7 @@
 import json
 import subprocess
 import sys
+from importlib.resources import files
 
 from robot_rsi.agent_host import AgentHost
 from robot_rsi.contracts import TaskBegin
@@ -71,7 +72,7 @@ async def test_information_goal_discovers_workflow_finishes_with_note_and_return
             cards = await call("skills_list", {"query": "机器人项目"})
             assert any(c["name"] == "robot_onboarding" for c in cards["skills"])
             skill = await call("skill_describe", {"name": "robot_onboarding"})
-            assert "Inspect" in skill["instructions"]
+            assert skill["instructions"] == files("robot_rsi").joinpath("resources/robot-onboarding/SKILL.md").read_text()
             source = await call("project_files", {"path": "README.md"})
             await call("workspace_note", {"key": "project_summary", "title": "Source facts",
                                            "text": source["text"], "source": "README.md:1"})

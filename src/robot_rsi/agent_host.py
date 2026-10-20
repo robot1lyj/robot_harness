@@ -182,7 +182,8 @@ class AgentHost:
                         arguments.setdefault("selected_skill", selected)
                     response = await self.runtime.invoke(name, arguments,
                                                          agent_session_id=session["id"])
-                    if name in ("project_files", "workspace_read", "workspace_note", "skills_list", "skill_describe"):
+                    if name in ("project_files", "workspace_read", "workspace_note", "skills_list", "skill_describe",
+                                "harness_read", "tool_describe", "tools_list", "capabilities_list", "resources_list"):
                         self.runtime.store.event("agent.tool_result", {"session_id": session["id"],
                                                  "tool": name, "response": response})
                     if response["ok"] and name == "task_context":
