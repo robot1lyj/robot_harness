@@ -1,6 +1,6 @@
 ---
 name: robot-onboarding
-description: Deliver a source-grounded integration plan with environment, capability destinations, concrete contract mappings and a first runnable task; implement when authorized and equipped.
+description: Establish applicable robot foundations, select optional extensions once, and deliver sourced environment, capability mappings and a first runnable task; implement within authorized tools.
 ---
 
 # Robot project onboarding

@@ -91,6 +91,13 @@ installation or write permission. Installed `harness_read` and `tool_describe` m
 guides/contracts available on demand; the plan includes environment, destinations, field mappings
 and a first runnable task. See [source/target usage](docs/integration.md#source-usage-target-and-an-actionable-plan).
 
+Initial robot integration prioritizes an applicable independent environment, control/state,
+FK/IK, camera observations and supporting assets. Recording, teleoperation, human-in-the-loop
+and policy workflows are optional: an unspecified request gets one grouped choice question,
+while an explicit scope is reused. Later tasks can add selected workflows from the old source
+without copying the whole application. A specific data task keeps its own goal. See
+[foundation and scope examples](docs/integration.md#foundation-first-optional-workflows-by-choice).
+
 ### 3. 让 Agent 调用框架
 
 Keep one Harness usage directory per robot for local extensions/tests, uv.lock/.venv,

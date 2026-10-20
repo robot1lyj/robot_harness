@@ -16,7 +16,7 @@ view separates source_root/usage_root, selected_not_inspected target qualificati
 and installed digest from the task's fixed installation reference. An existing target path does
 not establish installed packages or device readiness. Original requests remain task goals.
 
-robot_onboarding 1.4.1 delivers four sourced decisions in the Chinese answer: (1) usage environment,
+robot_onboarding 1.5.0 delivers four sourced decisions in the Chinese answer: (1) usage environment,
 conditions/dependencies/fixed installation, (2) selected capability destinations and maintenance
 locations, (3) actual contract fields/units/frames/time/status mappings and gap ownership,
 (4) first runnable goal/input, minimum artifacts, call entry, verifiable output and remaining work.
@@ -31,6 +31,46 @@ canonical copy is maintained. A development install without the packaged resourc
 guide_not_installed; it never falls back to checkout/development files. `tool_describe` exposes
 actual input schemas; tools_list/capabilities_list/resources_list describe host availability
 without connecting devices. Public framework contracts are not evidence of robot implementations.
+
+## Foundation first, optional workflows by choice
+
+For initial robot integration, recommend the applicable independent environment, control/state,
+FK/IK and geometry, camera observations, and supporting model/TCP/frame/calibration assets.
+Adapt this set to the robot and source; list missing or inapplicable parts. A convenient offline
+data check does not replace the foundation of a robot/camera project. State/image sampling is
+basic observation; organizing episodes, datasets, exports or quality checks is a separate workflow.
+
+Reuse the user's explicit scope. For an unspecified integration, recommend the foundation and
+ask one grouped question about discovered optional recording, teleoperation, human-in-the-loop
+or policy workflows. The foundation plan/work can proceed within existing authorization while
+that choice is pending; do not implement unselected extensions or treat silence as confirmation.
+An explicit standalone data task keeps its own goal. Selecting all extensions still permits
+staged delivery with a clear first batch and dependencies.
+
+| Request | Scope and first useful check |
+|---|---|
+| "Give me an integration plan" for a robot/camera project | Cover the applicable foundation and gaps; ask once about optional workflows. First checks exercise foundation contracts, with offline/field evidence separated |
+| "Only connect the basics" | Proceed with the foundation; no repeated extension question |
+| "Add recording" after foundation setup | Reuse installed bindings/assets; retrieve only the recording source and necessary dependencies |
+| "Check this dataset" | Perform that data task; do not require whole-robot integration |
+
+Keep short scope basis, selected items, installed foundation/bindings, missing contracts and
+deferred source/use pointers in existing workspace_note keys. Update those facts when choices
+or evidence change. Deferred workflows need no advance extraction, dependency installation or
+full business catalog in runtime context. Later tasks use relevant notes and source entries.
+
+The source-only CLI can return the base plan plus a grouped choice question in its Chinese
+message. Reply with an ordinary new request at the same --project/--usage-root, so the new task
+can retrieve notes; omit --task-id for a new goal. --task-id resumes the original goal and does
+not replace it with a different answer. An external conversational host can retain its normal
+user dialogue. No question service or new Runtime API is required.
+
+Foundation evidence may use installed synthetic/recorded ports: sample named robot state,
+inspect command acceptance versus sampled completion/hold, capture an image, and exercise
+available FK/IK with fixed models/frames. Keep physical feedback, real clock/calibration,
+transport/stop and field validation explicitly pending when untested. The
+[synthetic adapter](../examples/synthetic_adapter/README.md) demonstrates these contracts without
+hardware; its known solver is not general IK. Missing contracts stay in the plan.
 
 ## Independent environment and classified integration
 
@@ -76,13 +116,13 @@ MCP initialize gives configuration identity, purpose, qualification and detail e
 creating another Runtime. Counts/cards and original query tools bound the view; it is configuration,
 not a health check or live readiness claim. Ordinary runtime does not repeat robot_onboarding.
 
-The English robot_onboarding 1.4.1 workflow permits local candidate edits/build/tests only for
+The English robot_onboarding 1.5.0 workflow permits local candidate edits/build/tests only for
 an explicit implementation request with host-authorized development tools. Ordinary inspection
 stays read-only. The built-in source-only client still has no shell or source-write tools; an
 external coding host keeps its own authorized tools. No prompt grants installation/device rights.
 Existing fixed workflow versions remain immutable. On an existing skill pool, the host explicitly
 runs `robot-rsi --profile PROFILE skill discover` and then
-`robot-rsi --profile PROFILE skill enable robot_onboarding 1.4.1` to select the new version for
+`robot-rsi --profile PROFILE skill enable robot_onboarding 1.5.0` to select the new version for
 new work; existing task pins retain their version.
 
 Inspection ends with sourced findings/mapping and advice. Save short decisions and sources
