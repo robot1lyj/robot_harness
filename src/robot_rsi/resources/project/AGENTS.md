@@ -2,6 +2,8 @@
 
 This directory owns local extensions, skills, profiles, assets and new state under `.rsi/state`.
 Harness is a fixed installed dependency; do not replace this project with the framework checkout.
+When a controlled host entry is supplied, use its fixed installation and writable scope. Build local
+candidates here; the host update path preserves core references. This text is not a permission boundary.
 
 Before integration work, run `uv run --no-sync robot-rsi guide agent` to load the installed base,
 onboarding workflow and project guide. Read `profiles/development.json` for the selected source

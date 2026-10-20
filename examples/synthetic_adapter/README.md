@@ -8,9 +8,9 @@
 ```bash
 uv build --wheel --out-dir /tmp/synthetic-wheels
 uv build --wheel examples/synthetic_adapter --out-dir /tmp/synthetic-wheels
-robot-rsi init /tmp/synthetic-use --core-wheel /tmp/synthetic-wheels/robot_rsi_harness-0.2.0-py3-none-any.whl
+robot-rsi init /tmp/synthetic-use --core-wheel /tmp/synthetic-wheels/robot_rsi_harness-0.3.0-py3-none-any.whl
 cd /tmp/synthetic-use
-uv add /tmp/synthetic-wheels/robot_rsi_synthetic_adapter-0.2.0-py3-none-any.whl
+uv add /tmp/synthetic-wheels/robot_rsi_synthetic_adapter-0.3.0-py3-none-any.whl
 ```
 
 从产品源码运行 demo.py，显式给 profile 和当前使用项目内的新状态根；Python导入固定安装的实现，

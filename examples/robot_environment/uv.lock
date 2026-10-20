@@ -312,8 +312,8 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "robot-rsi-harness", path = "wheels/robot_rsi_harness-0.2.0-py3-none-any.whl" },
-    { name = "robot-rsi-lab-adapter", path = "wheels/robot_rsi_lab_adapter-0.3.0-py3-none-any.whl" },
+    { name = "robot-rsi-harness", path = "wheels/robot_rsi_harness-0.3.0-py3-none-any.whl" },
+    { name = "robot-rsi-lab-adapter", path = "wheels/robot_rsi_lab_adapter-0.4.0-py3-none-any.whl" },
 ]
 
 [[package]]
@@ -511,8 +511,8 @@ wheels = [
 
 [[package]]
 name = "robot-rsi-harness"
-version = "0.2.0"
-source = { path = "wheels/robot_rsi_harness-0.2.0-py3-none-any.whl" }
+version = "0.3.0"
+source = { path = "wheels/robot_rsi_harness-0.3.0-py3-none-any.whl" }
 dependencies = [
     { name = "fastapi" },
     { name = "httpx" },
@@ -524,7 +524,7 @@ dependencies = [
     { name = "uvicorn" },
 ]
 wheels = [
-    { filename = "robot_rsi_harness-0.2.0-py3-none-any.whl", hash = "sha256:935e6fe709b3ecc6525b1de8aa537914a81dafd0661a714f868164bf976815fc" },
+    { filename = "robot_rsi_harness-0.3.0-py3-none-any.whl", hash = "sha256:1c82169253f05c2c8498d72f1cf83472e9d67cc43904027192fd877efbd247c0" },
 ]
 
 [package.metadata]
@@ -541,17 +541,17 @@ requires-dist = [
 
 [[package]]
 name = "robot-rsi-lab-adapter"
-version = "0.3.0"
-source = { path = "wheels/robot_rsi_lab_adapter-0.3.0-py3-none-any.whl" }
+version = "0.4.0"
+source = { path = "wheels/robot_rsi_lab_adapter-0.4.0-py3-none-any.whl" }
 dependencies = [
     { name = "robot-rsi-harness" },
 ]
 wheels = [
-    { filename = "robot_rsi_lab_adapter-0.3.0-py3-none-any.whl", hash = "sha256:29ea48489922aa5a4e68f9e606a1d6bcf9717fdaca550e1621e61400b146c551" },
+    { filename = "robot_rsi_lab_adapter-0.4.0-py3-none-any.whl", hash = "sha256:583d35097725c274b380962295b103817d3fecf4289b3138cce95d4c20beef57" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "robot-rsi-harness", specifier = "==0.2.0" }]
+requires-dist = [{ name = "robot-rsi-harness", specifier = "==0.3.0" }]
 
 [[package]]
 name = "rpds-py"

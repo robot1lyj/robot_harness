@@ -52,6 +52,9 @@ class Runtime:
         self, profile: Profile, *, depth_provider=None, robot_transport=None, bindings_factory=None
     ):
         self.profile = profile
+        from .host_boundary import protection
+
+        self.host_protection = protection()
         self.project = Project(profile)
         self._binding_scope = ContextVar("runtime_binding", default=None)
         self.store = Store(profile)

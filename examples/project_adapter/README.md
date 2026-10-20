@@ -6,9 +6,9 @@
 ```bash
 uv build --wheel --out-dir /tmp/project-wheels
 uv build --wheel examples/project_adapter --out-dir /tmp/project-wheels
-robot-rsi init /tmp/project-use --core-wheel /tmp/project-wheels/robot_rsi_harness-0.2.0-py3-none-any.whl
+robot-rsi init /tmp/project-use --core-wheel /tmp/project-wheels/robot_rsi_harness-0.3.0-py3-none-any.whl
 cd /tmp/project-use
-uv add /tmp/project-wheels/robot_rsi_lab_adapter-0.3.0-py3-none-any.whl
+uv add /tmp/project-wheels/robot_rsi_lab_adapter-0.4.0-py3-none-any.whl
 ```
 
 本例 profile 令 default_ports=false：两套相机(detail 12×8 / survey 4×3)和FK(250/200mm)候选可发现，

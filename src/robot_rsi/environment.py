@@ -49,6 +49,7 @@ def environment_summary(runtime, task_id=None, bindings=None):
         **configured_environment(runtime.profile),
         "scope": runtime.store.scope,
         "installation_digest": execution.get("installation_digest") or runtime.task_memory.installation_digest,
+        "protection": runtime.host_protection,
         **({"current_installation": {"python": installation_identity()["python"], "executable": sys.executable,
                                      "digest": runtime.task_memory.installation_digest}}
            if runtime.profile.project else {}),

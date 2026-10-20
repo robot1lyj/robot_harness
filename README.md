@@ -4,13 +4,16 @@
 框架负责统一合同、执行、版本、任务和记忆；使用项目负责本地实现、配置、资产和日常方法；
 coding 宿主保留原有文件、终端和授权。框架不依赖 ROS 2，也不接管设备控制器。
 
+用户说“能力、技能、工具或功能”时，先按目标、输入输出和交付要求选择已有方法；不要求用户先分类。
+明确要求接口/技能 manifest 时仍照办。底座版本与可写范围由[受控宿主入口](docs/project-workflow.md#固定底座与受控入口)落实，普通桌面全权限会话不会自动受保护。
+
 ## 从当前使用目录开始
 
 准备固定 core wheel，在你选定的机器人使用目录运行：
 
 ```bash
-uv tool run --from /path/robot_rsi_harness-0.2.0-py3-none-any.whl robot-rsi init . \
-  --core-wheel /path/robot_rsi_harness-0.2.0-py3-none-any.whl --source /path/legacy-project
+uv tool run --from /path/robot_rsi_harness-0.3.0-py3-none-any.whl robot-rsi init . \
+  --core-wheel /path/robot_rsi_harness-0.3.0-py3-none-any.whl --source /path/legacy-project
 uv run --no-sync robot-rsi guide agent
 ```
 

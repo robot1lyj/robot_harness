@@ -62,7 +62,7 @@ Agent 提交任务或工具调用。Runtime 解析参数及当前绑定，技能
 | 适配实现 | 怎样调用具体 SDK 或算法？ | 编写可安装适配包，保留原设备执行 owner |
 | 宿主装配 | 本项目使用哪个实例、实现和版本？ | 用 profile 组合端口、资源、模型和标定 |
 
-机器人与相机是并列的设备资源。FK/IK、深度和标定求解器提供计算能力；模型、权重、标定参数是有版本的资产。多个步骤构成可复用方法时，再组织为技能。
+机器人与相机是并列的设备资源。FK/IK、深度和标定求解器提供计算能力；模型、权重、标定参数是有版本的资产。需要可复用目标方法时组织为技能；选择依据实际成果与合同，不按用户叫法、代码长短或步骤数机械分类。
 
 ## 代码导航
 
@@ -99,6 +99,7 @@ Python wheel 安装运行模块、英文基础提示/规范技能，以及由公
 | 职责 | 主要源码入口 | 负责的事情 |
 |---|---|---|
 | 项目初始化与安装引导 | [project_setup.py](../src/robot_rsi/project_setup.py) | 当前使用项目骨架、uv安装和同源guide；不创建机器人能力 |
+| 固定底座/受控宿主 | [host_install.py](../src/robot_rsi/host_install.py)、[host_boundary.py](../src/robot_rsi/host_boundary.py) | 宿主从认可产物建立新安装；独立启动核对、bwrap挂载与实际保护事实。项目可写，底座只读，不是全机权限平台 |
 | 工具与进程入口 | [cli.py](../src/robot_rsi/cli.py)、[mcp_server.py](../src/robot_rsi/mcp_server.py)、[server.py](../src/robot_rsi/server.py) | CLI、MCP 和 HTTP 的协议入口 |
 | 共享工具定义 | [tool_specs.py](../src/robot_rsi/tool_specs.py) | 静态 schema、说明与工具集合；供运行器、注册校验和绑定试调用共用，实际分发仍只有 Runtime |
 | 统一调用与宿主装配 | [runtime.py](../src/robot_rsi/runtime.py)、[host.py](../src/robot_rsi/host.py)、[adapters.py](../src/robot_rsi/adapters.py) | 工具分发、构造端口、资源生命周期和扩展工厂 |

@@ -204,6 +204,20 @@ def main():
     actions.add_parser("identity")
     verify = actions.add_parser("verify")
     verify.add_argument("manifest")
+    host = sub.add_parser("host", help="宿主从固定产物准备受控安装；不采纳已有可写安装")
+    actions = host.add_subparsers(dest="action", required=True)
+    prepare = actions.add_parser("prepare")
+    prepare.add_argument("--directory", required=True)
+    prepare.add_argument("--core-wheel", required=True)
+    prepare.add_argument("--core-sha256", required=True)
+    prepare.add_argument("--requirements", required=True)
+    prepare.add_argument("--wheel", action="append", default=[])
+    prepare.add_argument("--uv")
+    prepare.add_argument("--codex")
+    update = actions.add_parser("update")
+    update.add_argument("--baseline", required=True)
+    update.add_argument("--directory", required=True)
+    update.add_argument("--wheel", action="append", required=True)
     evidence = sub.add_parser("evidence", help="Host-only scoped task/evidence export")
     evidence.add_argument("--task-id", required=True)
     evidence.add_argument("--output", required=True)
@@ -250,6 +264,15 @@ def main():
             item.add_argument("--note", required=True)
     args = parser.parse_args()
     try:
+        if args.command == "host":
+            from .host_install import prepare, update
+
+            if args.action == "prepare":
+                output(prepare(args.directory, args.core_wheel, args.core_sha256, args.requirements,
+                               wheels=args.wheel, uv=args.uv, codex=args.codex))
+            else:
+                output(update(args.baseline, args.directory, args.wheel))
+            return
         if args.command in ("init", "guide"):
             from .project_setup import guide, initialize
 

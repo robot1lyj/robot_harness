@@ -1,5 +1,5 @@
 {
-  "name": "robot_onboarding", "version": "1.6.1", "kind": "agent_workflow", "category": "foundation",
+  "name": "robot_onboarding", "version": "1.7.0", "kind": "agent_workflow", "category": "foundation",
   "description": "Establish applicable robot foundations, select optional extensions once, and deliver a sourced environment, capability mapping and first runnable task; preserve the user's goal and authorized scope.",
   "qualification": "purpose-scoped integration guidance; not physical validation",
   "requires": {}, "resources": [],
