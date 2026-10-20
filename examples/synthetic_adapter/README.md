@@ -1,28 +1,27 @@
-# Independent synthetic adapter
+# 独立模拟适配包
 
-An installable `robot_rsi.adapters` factory with no hardware SDK. It provides one three-joint named manipulator (`bridge_3`), a `vacuum` tool measured in Pa, an optional independent camera, and a known Cartesian/yaw FK/IK fixture. It provides no scene localization, pick/place planner or outcome verifier. These are software contract examples, not a supported physical device or general IK solver.
+本包是无硬件SDK的 robot_rsi.adapters 工厂：三命名关节机械结构 bridge_3、以Pa表示的vacuum工具、
+可选独立相机与已知 Cartesian/yaw FK/IK。没有场景定位、抓放规划或结果识别；不是通用IK或真机支持。
 
-After installing the core project:
-
-```bash
-uv pip install --no-deps -e examples/synthetic_adapter
-uv run --no-sync robot-rsi --profile examples/synthetic_adapter/profiles/shared.json config-check
-uv run --no-sync python examples/synthetic_adapter/demo.py --state-root /tmp/synthetic-demo
-uv run --no-sync python examples/synthetic_adapter/demo.py --profile examples/synthetic_adapter/profiles/camera_only.json --state-root /tmp/camera-demo
-uv run --no-sync python examples/synthetic_adapter/demo.py --profile examples/synthetic_adapter/profiles/compute_only.json --state-root /tmp/compute-demo
-```
-
-Use a new state directory for each independent exercise. Within one Runtime, `resource_connect` explicitly opens each owner; shared robot/camera resources connect and close that owner once. `resources_list` and `capabilities_list` read metadata without connecting. `robot_state` returns sampled joint/tool values, clock identity and model reference; `model_get` returns the corresponding definition. `robot_command` returns an operation handle, whose submitted receipt is distinct from measured completion. Raw commands do not declare whole-goal success.
-
-`profiles/robot_only.json` omits the camera. The camera-only and compute-only profiles set the legacy built-in robot selector to null and supply no execution owner. FK/IK perform no device access. Model/calibration `v1` and `v2` are fixed synthetic records; profiles select versions, tasks keep their initial references.
-
-An optional code skill exercises the same calculation from the existing task runner:
+在共享框架仓库构建固定 wheel，再从新的使用目录安装：
 
 ```bash
-uv run --no-sync robot-rsi --profile examples/synthetic_adapter/profiles/compute_only.json skill register examples/synthetic_adapter/skills/check_fk
-uv run --no-sync robot-rsi --profile examples/synthetic_adapter/profiles/compute_only.json skill enable fixture_fk 1.0.0
-uv run --no-sync robot-rsi --profile examples/synthetic_adapter/profiles/compute_only.json --task-id fk-example call task_begin '{"goal":"计算 FK"}'
-uv run --no-sync robot-rsi --profile examples/synthetic_adapter/profiles/compute_only.json call task_run '{"task_id":"fk-example","task_epoch":0,"request_id":"fk-1","skill":"fixture_fk"}'
+uv build --wheel --out-dir /tmp/synthetic-wheels
+uv build --wheel examples/synthetic_adapter --out-dir /tmp/synthetic-wheels
+robot-rsi init /tmp/synthetic-use --core-wheel /tmp/synthetic-wheels/robot_rsi_harness-0.2.0-py3-none-any.whl
+cd /tmp/synthetic-use
+uv add /tmp/synthetic-wheels/robot_rsi_synthetic_adapter-0.2.0-py3-none-any.whl
 ```
 
-The last command waits for the calculation; the pose is not physical or collision validation. The integration workflow [robot-onboarding](../../skills/robot-onboarding/SKILL.md) and [public guide](../../docs/integration.md) explain the factory and binding contract.
+从产品源码运行 demo.py，显式给 profile 和当前使用项目内的新状态根；Python导入固定安装的实现，
+不是旧源码PYTHONPATH。共享/仅机器人/仅相机/纯计算 profile 位于本例 profiles/。
+config-check 与目录查询不连接资源。demo 是无模型的显式软件合同调用，不是原生Agent选择证明。
+
+resource_connect 在同一Runtime中显式打开owner，共享资源只connect/close一次。
+robot_state 返回命名关节/工具、时钟及模型；model_get 读固定定义。
+robot_command 的 accepted 回执与采样完成反馈不同，原始命令不自行宣告完整目标成功。
+FK/IK不访问设备；模型/标定v1/v2由配置选择，任务保留初始引用。
+
+可选 fixture_fk 1.0.0 代码技能在 skills/check_fk，按原skill register/enable后由task_run调用。
+计算结果不证明物理位姿或碰撞安全。基础端口验证、日常方法与现场验证请分别取证。
+详见[接入指南](../../docs/integration.md)及[接口合同](../../docs/interfaces.md)。

@@ -2,11 +2,11 @@
 name = "offline-slider-environment"
 version = "0.1.0"
 requires-python = ">=3.12,<3.14"
-dependencies = ["robot-rsi-harness==0.1.0", "robot-rsi-lab-adapter==0.2.0"]
+dependencies = ["robot-rsi-harness==0.2.0", "robot-rsi-lab-adapter==0.3.0"]
 
 [tool.uv]
 package = false
 
 [tool.uv.sources]
-robot-rsi-harness = {path = "wheels/robot_rsi_harness-0.1.0-py3-none-any.whl"}
-robot-rsi-lab-adapter = {path = "wheels/robot_rsi_lab_adapter-0.2.0-py3-none-any.whl"}
+robot-rsi-harness = {path = "wheels/robot_rsi_harness-0.2.0-py3-none-any.whl"}
+robot-rsi-lab-adapter = {path = "wheels/robot_rsi_lab_adapter-0.3.0-py3-none-any.whl"}

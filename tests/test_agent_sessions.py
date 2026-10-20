@@ -65,6 +65,76 @@ class FakeClient:
         return result or {"completed": True, "returncode": 0}
 
 
+@pytest.mark.parametrize("preconnected", [False, True])
+async def test_native_resource_tools_share_owner_and_report_client_scope(profile, preconnected):
+    pytest.importorskip("synthetic_adapter")
+    from robot_rsi.agent_client import AGENT_TOOLS
+    from robot_rsi.contracts import Profile
+
+    profile.host = Profile(host={"adapter": {"factory": "synthetic_fixture"}}).host
+    profile.robot = None
+    async with Runtime(profile) as runtime:
+        if preconnected:
+            await call(runtime, "resource_connect", resource_id="bench")
+        assert runtime.robot.connect_count == int(preconnected)
+        await call(runtime, "task_begin", task_id="session-task", goal="读取工作区机器人状态并保存资料")
+
+        async def action(turn):
+            assert {tool["name"] for tool in turn["tools"]} == set(AGENT_TOOLS)
+
+            async def invoke(tool, **arguments):
+                result = await turn["invoke"](tool, arguments)
+                assert result["ok"], result
+                return result["result"]
+
+            listed = await invoke("tools_list")
+            assert listed["tool_scope"] == "native_agent"
+            tools = {t["name"]: t for t in listed["tools"]}
+            assert {n for n, t in tools.items() if t["callable"]} == set(AGENT_TOOLS)
+            for name in ("resource_connect", "robot_state", "robot_command"):
+                detail = await invoke("tool_describe", name=name)
+                assert detail["callable"] == tools[name]["callable"]
+                assert detail["available"] == tools[name]["available"]
+            assert tools["robot_command"]["available"] and not tools["robot_command"]["callable"]
+            assert tools["robot_state"]["available"] and tools["resource_connect"]["available"]
+            assert runtime.robot.connect_count == int(preconnected)  # discovery did not connect
+            if not preconnected:
+                await invoke("resource_connect", resource_id="bench")
+                await invoke("resource_connect", resource_id="sensor")
+            assert runtime.robot.connect_count == 1
+            state = await invoke("robot_state", resource_id="bench")
+            await invoke("workspace_note", key="state", title="软件状态", text=state["source"], source="robot_state")
+            await invoke("task_finish", task_epoch=turn["task_epoch"], outcome="succeeded",
+                         summary="软件状态已读取", evidence_refs=[{"kind": "workspace_note", "id": "state"}])
+            await invoke("task_archive")
+
+        async with AgentHost(runtime).serve() as host:
+            result = await host.run("session-task", client=FakeClient(action))
+        assert result["status"] == "complete", result
+    assert runtime.robot.close_count == 1
+
+
+async def test_native_source_only_resource_tools_cannot_configure_or_use_stale_session(tmp_path):
+    from robot_rsi.project import source_profile
+
+    profile = source_profile(tmp_path, state_root=str(tmp_path / "state"))
+    async with Runtime(profile) as runtime:
+        await begin(runtime)
+        session = runtime.agent_state.start("session-task", "fast", {"client": "fixture"})
+        async def invoke(name, args):
+            return await runtime.invoke(name, args, agent_session_id=session["id"])
+
+        tools = (await invoke("tools_list", {}))["result"]["tools"]
+        for tool in tools:
+            if tool["name"] in ("resource_connect", "robot_state"):
+                assert tool["callable"] and not tool["available"]
+        assert (await invoke("resource_connect", {"resource_id": "unknown"}))["error"]["code"] == "not_found"
+        assert (await invoke("robot_state", {"resource_id": "unknown"}))["error"]["code"] == "unsupported"
+        assert runtime.adapter.resources == () and runtime.robot is None
+        await call(runtime, "task_cancel", task_id="session-task")
+        assert (await invoke("resource_connect", {"resource_id": "unknown"}))["error"]["code"] == "task_closed"
+
+
 def capture(runtime, name, **details):
     destination = os.environ.get("B04_EVIDENCE_ROOT")
     if not destination:

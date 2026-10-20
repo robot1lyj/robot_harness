@@ -1,11 +1,5 @@
-# Offline legacy laboratory fixture
+# 小型已有实验项目
 
-This small project deliberately has no Harness manifest or factory. `capture.read_recording`
-reads an authored synthetic recording; `geometry.tip_mm` calculates one slider point in mm.
-`operator_app.inspect_height` is a manual UI-coupled interval inspection; the
-[independent environment](../robot_environment/README.md) extracts its method as a code skill.
-`operator_app.align_and_move` is unfinished and requires an operator/device implementation.
-The recording is a fixture, not a physical camera sample. Do not run the operator entry.
-
-Existing tests can run before adaptation with
-`PYTHONPATH=examples python -m pytest examples/legacy_lab/tests -q`.
+capture.py读取录制，geometry.py计算工具点，operator_app.py组合UI和检查方法。
+录制和公式是软件演示数据；设备传输/运动路径未实现，不代表真实机器人已连接。
+此目录仅作为选定来源，适配包在旁边独立维护；不要在运行时通过旧源码路径导入整个应用。

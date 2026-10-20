@@ -1,4 +1,4 @@
-# Bench utilities
+# 滑台工具
 
-Python utilities for a laboratory slide bench. `console.py` is the application entry.
-Settings are in `config.json`; example data is under `data/`.
+console.py组合样本读取与工具点计算；设备传输和命令仲裁尚未配置。
+config.json记录样本位置、滑台限位和工具偏移；data目录保存离线标量录制。

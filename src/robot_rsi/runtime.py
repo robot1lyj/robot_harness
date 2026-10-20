@@ -182,6 +182,9 @@ class Runtime:
             if name == "robot_hold":
                 available = getattr(self.robot, "supports_hold", False)
                 reason = "Check confirmed in result; availability is not stop confirmation"
+            if name == "resource_connect":
+                available = bool(self.adapter.resources)
+                reason = "Connect a host-configured owner; discovery does not connect"
             if name == "depth_estimate":
                 readiness = (
                     self.provider.readiness()
@@ -424,6 +427,19 @@ class Runtime:
             if task_id and name == "robot_hold":
                 self.task_memory.cancel(task_id)
             result = await self._dispatch(name, args, task_id=task_id)
+            if agent_session_id and name in ("tools_list", "tool_describe"):
+                from .agent_client import AGENT_TOOLS
+
+                if name == "tools_list":
+                    entries = result["tools"]
+                else:
+                    availability = next(t for t in self.tools()["tools"] if t["name"] == result["name"])
+                    result.update({key: availability[key] for key in ("available", "reason")})
+                    entries = [result]
+                for entry in entries:
+                    entry["callable"] = entry["name"] in AGENT_TOOLS
+                result["tool_scope"] = "native_agent"
+                result["callable_meaning"] = "exposed by this native client; separate from bound capability and execution admission"
             if agent_session_id and name in ("task_run", "task_recover"):
                 self.agent_state.advance(agent_session_id)
             response = {"ok": True, "result": result}

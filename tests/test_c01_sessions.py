@@ -62,6 +62,8 @@ async def test_native_reuse_compact_results_and_host_wait(profile, native, failu
         assert len({s['native_session_id'] for s in sessions}) == 1
         assert len({s['native_turn_id'] for s in sessions}) == decisions
         messages = [json.loads(line) for line in native.read_text().splitlines()]
+        initialized = next(m['params']['dynamicTools'] for m in messages if m.get('method') == 'thread/start')
+        assert {'resource_connect', 'robot_state'} <= {tool['name'] for tool in initialized}
         assert sum(m.get('method') == 'initialize' for m in messages) == 1
         assert sum(m.get('method') == 'thread/start' for m in messages) == 1
         views = [json.loads(m['params']['input'][0]['text'].split('\n',1)[1])

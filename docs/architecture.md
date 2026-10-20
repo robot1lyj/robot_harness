@@ -1,21 +1,13 @@
 # 项目架构与代码导航
 
-An independent environment is a host-selected Profile/Runtime/Store/Registry combination,
-not an initialization skill or separate state service. `environment.py` projects configuration,
-installation, bounded capability/skill cards and task-fixed binding/assets into the original
-workspace/task view. MCP initialize shares its configuration projection before lifespan creates
-the single Runtime. Existing role/station/namespace scopes isolate profiles in one robot usage
-directory. The [offline environment](../examples/robot_environment/README.md) keeps local
-extensions, uv.lock/.venv, configuration and state together; Harness remains globally shared.
-The legacy project/environment stays a read-only source by default. Capability packages,
-selected extracted modules, service contracts and versioned assets feed the independent usage
-environment; this is not a copy or in-place upgrade of the old application/.venv.
+独立环境复用宿主选择的 Profile/Runtime/Store/Registry，不是初始化技能或额外状态服务。
+environment.py 把配置、安装、必要目录卡与任务固定绑定/资产投影到原工作区/任务视图；
+MCP 初始化共享配置投影，之后只创建一个 Runtime。原 role/station/namespace 继续隔离。
+使用项目保存本地扩展、配置、锁/venv 与状态，框架开发/发行保持公共依赖职责。
+旧项目只作选定来源，按能力取包、模块、服务或资产，不复制整个旧环境。
 
-Optional ProjectConfig.usage_root names the host-selected target, separate from the source root
-and current Python/installation. It creates nothing and changes neither scope nor source access.
-`guides.py` serves only two installed public guide resources; wheel force-includes canonical
-docs/integration.md and docs/interfaces.md. Native/MCP share the existing tool table for guide
-reads and original read-only directory/schema entries; there is no general filesystem/docs search.
+ProjectConfig.usage_root 只标识使用目标，不创建目录或扩大权限。显式 init 才生成当前项目骨架。
+guide 读取随 wheel 安装的中文公共文档和英文规范；harness_read 保留原两份分页合同入口。
 
 Robot RSI Harness 是连接通用 Agent 与机器人能力的运行框架。它组织任务、调用和记录；使用方项目提供具体设备、算法与任务方法。
 
@@ -100,12 +92,13 @@ robot_harness/
 └── tests/                        通用合同、运行流程及模块边界测试
 ```
 
-Python wheel 安装 `src/robot_rsi` 的运行模块、英文基础提示与规范接入技能正文；公共指南与示例由产品仓库提供，外部适配/技能包独立安装。使用方项目保存自己的设备配置、扩展代码与运行记录。
+Python wheel 安装运行模块、英文基础提示/规范技能，以及由公共 docs 同源打包的 integration、interfaces、project-workflow。产品源码另有完整示例。使用项目通过固定依赖复用框架，保存自己的配置、扩展/日常技能、资产和新状态；不镜像框架源码。
 
 当前采用一个 Python 根包组织模块。下表是实际职责导航，不表示已经拆成多个独立服务。
 
 | 职责 | 主要源码入口 | 负责的事情 |
 |---|---|---|
+| 项目初始化与安装引导 | [project_setup.py](../src/robot_rsi/project_setup.py) | 当前使用项目骨架、uv安装和同源guide；不创建机器人能力 |
 | 工具与进程入口 | [cli.py](../src/robot_rsi/cli.py)、[mcp_server.py](../src/robot_rsi/mcp_server.py)、[server.py](../src/robot_rsi/server.py) | CLI、MCP 和 HTTP 的协议入口 |
 | 共享工具定义 | [tool_specs.py](../src/robot_rsi/tool_specs.py) | 静态 schema、说明与工具集合；供运行器、注册校验和绑定试调用共用，实际分发仍只有 Runtime |
 | 统一调用与宿主装配 | [runtime.py](../src/robot_rsi/runtime.py)、[host.py](../src/robot_rsi/host.py)、[adapters.py](../src/robot_rsi/adapters.py) | 工具分发、构造端口、资源生命周期和扩展工厂 |
@@ -149,16 +142,16 @@ Python wheel 安装 `src/robot_rsi` 的运行模块、英文基础提示与规�
 - [接口参考](interfaces.md)：能力分类、调用语义和精确 schema 的源码位置。
 - [文档目录](README.md)：按使用目的查找说明与参考案例。
 
-## First-project prompt and source scope
+## 使用项目与 Agent 交接
 
-[prompts.py](../src/robot_rsi/prompts.py) reads [base.md](../src/robot_rsi/resources/prompts/base.md)
-from the installed package and records its content identity. AgentHost supplies it to CodexClient
-thread/start; MCP initialize adds only protocol guidance. Task context/delta facts remain separate.
-The packaged [onboarding workflow](../src/robot_rsi/resources/robot-onboarding/SKILL.md) is loaded
-through Registry on demand; framework development AGENTS is not the runtime prompt.
+安装后的 init 在选定目录生成薄骨架和既有 Profile，遇到框架根明确拒绝；它不建第二数据库、
+不连接设备，也不改用户已有入口。project_setup.py 提供显式初始化与已安装引导读取，
+项目 AGENTS 指向 guide agent。coding 宿主保留文件/终端工具，在当前项目实施，不重开只读子 Agent。
 
-agent run --project constructs the existing Runtime/Store/Registry with no adapter or device owner,
-then uses Project's bounded project_files source access in development/onboarding scope. Explicit
-materials and existing profile paths continue to work. Knowledge is saved in ordinary sourced notes,
-not a second project database; each new task has a separate native client directory. Source access
-never grants runtime/evaluation scopes arbitrary filesystem or execution permissions.
+prompts.py 从安装包读取 base 并记录身份，原 AgentHost 的 thread/start 与 MCP 初始化同源。
+robot_onboarding 1.6.0 通过 Registry 按需读取；开发 AGENTS 不发布。
+source-only agent run --project 仍用无设备 Runtime/Store/Registry，只读来源并保存方案笔记。
+该路径和真实 coding 实施/日常任务复用分别取证，文件存在不证明模型加载或硬件可用。
+
+项目根、固定依赖/锁/venv 属于使用方；框架维护公共合同、执行/版本/记忆，使用方维护本地实现，
+宿主维护工具和设备授权。更新依赖保留本地文件，不再向使用分支做产品整树同步。

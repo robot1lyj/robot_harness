@@ -1,264 +1,149 @@
-# 接入自己的机器人项目与能力
+# 接入已有机器人项目
 
-## Source, usage target and an actionable plan
+<a id="source-usage-target-and-an-actionable-plan"></a>
+## 当前目录是使用项目
 
-For a planning request, pass the read-only legacy root and selected usage destination separately:
+框架源码、净产品发行与机器人使用项目各有职责。使用目录的 pyproject/uv.lock/.venv 属于应用，
+本地 extensions、skills、profiles、assets 和新状态保存在这里；框架是固定安装的依赖。
+不要把框架根 pyproject 当成使用项目，也不要用发布整树覆盖本地实现。
 
 ```bash
-robot-rsi agent run --project /path/to/legacy --usage-root /path/to/robot-use "这是我的机器人项目，给我一个能开始实施的接入方案。"
-robot-rsi mcp --project /path/to/legacy --usage-root /path/to/robot-use
+robot-rsi init . --core-wheel /path/robot_rsi_harness-0.2.0-py3-none-any.whl --source /path/legacy
+uv run --no-sync robot-rsi guide agent
 ```
 
-`project.usage_root` is optional in an existing profile; the same flag can override it at these
-entries. It names a target only: no directory/environment is created, scanned or granted write
-access, and project_files stays inside the source root. Omission means not_selected. The environment
-view separates source_root/usage_root, selected_not_inspected target qualification, current Python
-and installed digest from the task's fixed installation reference. An existing target path does
-not establish installed packages or device readiness. Original requests remain task goals.
+init 在选定目录生成骨架并运行 `uv lock`、`uv sync --locked --no-dev --no-editable`。
+没有安装命令时可由 uv tool run 从指定 wheel 启动。`--source` 可暂缺，`--no-sync` 可仅生成。
+初始化不运行来源代码、安装硬件 SDK 或连接设备；初始 Profile 没有 robot/adapter/camera/depth。
+已有项目声明、Profile 或同名不同 wheel 会保留并给出冲突；框架目录会明确拒绝，不重定向。
+已有 README/AGENTS 不覆盖，需合并的模板放 `.rsi/harness/`。重复初始化不改原配置和依赖。
 
-robot_onboarding 1.5.0 delivers four sourced decisions in the Chinese answer: (1) usage environment,
-conditions/dependencies/fixed installation, (2) selected capability destinations and maintenance
-locations, (3) actual contract fields/units/frames/time/status mappings and gap ownership,
-(4) first runnable goal/input, minimum artifacts, call entry, verifiable output and remaining work.
-A plan can finish with a sourced note; an implementation request still needs actual artifacts
-and calls, or a precise unfinished handoff if the host lacks development tools.
+未显式选配置时，CLI 从当前目录向父级读取最近的 tool.robot-rsi.profile 声明，Profile 文件及其
+相对文件系统根按声明所在项目根解析。显式 --profile 和原 ROBOT_RSI_PROFILE 环境选择优先；
+声明缺文件/无效会明确报错，不退回 mock。显式 --project 的只读来源入口不加载这个隐式默认，
+不会凭空产生 profile 冲突；项目外没有声明时保留原行为。
 
-`harness_read` reads only the installed `integration` or `interfaces` guide, with character
-offset/limit and next_offset, full-text SHA, canonical_source, distribution/version and installed
-digest and direct installation origin when recorded by the installer (otherwise null). These two
-bodies are force-included from public docs when building the wheel; no second
-canonical copy is maintained. A development install without the packaged resources returns
-guide_not_installed; it never falls back to checkout/development files. `tool_describe` exposes
-actual input schemas; tools_list/capabilities_list/resources_list describe host availability
-without connecting devices. Public framework contracts are not evidence of robot implementations.
+## coding 宿主与只读方案
 
-## Foundation first, optional workflows by choice
+coding Agent 在当前项目沿自己的文件/终端工具实施已授权目标。生成的短 AGENTS 指向当前安装的
+`robot-rsi guide agent`：英文 base、规范 robot_onboarding 1.6.0 与中文项目指南同源读取。
+不复制开发历史或全局配置，不要求先开只能读源码的模型，也不强制 MCP；CLI/Python/MCP 均可调用
+原 Runtime。模板存在不代表模型已读，真实交接要核对实际工具输出与后续产物。
 
-For initial robot integration, recommend the applicable independent environment, control/state,
-FK/IK and geometry, camera observations, and supporting model/TCP/frame/calibration assets.
-Adapt this set to the robot and source; list missing or inapplicable parts. A convenient offline
-data check does not replace the foundation of a robot/camera project. State/image sampling is
-basic observation; organizing episodes, datasets, exports or quality checks is a separate workflow.
+只需要方案时，原入口继续使用：
 
-Reuse the user's explicit scope. For an unspecified integration, recommend the foundation and
-ask one grouped question about discovered optional recording, teleoperation, human-in-the-loop
-or policy workflows. The foundation plan/work can proceed within existing authorization while
-that choice is pending; do not implement unselected extensions or treat silence as confirmation.
-An explicit standalone data task keeps its own goal. Selecting all extensions still permits
-staged delivery with a clear first batch and dependencies.
+```bash
+robot-rsi agent run --project /path/legacy --usage-root /path/robot-use "这是我的机器人项目，给我一个能开始实施的接入方案。"
+robot-rsi mcp --project /path/legacy --usage-root /path/robot-use
+```
 
-| Request | Scope and first useful check |
+source-only 客户端没有开发文件/终端工具；它只分析来源、给可实施方案和具体交接。
+project.usage_root 只是宿主选定目标，不自动建目录、安装或授予写权限；project_files 仍限来源根。
+未选择时显示 not_selected，选择后未检查显示 selected_not_inspected。--project 与 --profile 不同时使用。
+新普通请求不带 --task-id，仍能按同一项目读取必要笔记；--task-id 恢复原目标，不替换为新需求。
+
+<a id="foundation-first-optional-workflows-by-choice"></a>
+## 基础优先与一次范围选择
+
+首次接入按机器人形态建立适用的独立环境、控制/状态、FK/IK、相机及模型/TCP/帧/标定资产。
+缺失或不适用项保留在结果中，不能因数据检查易跑而替代基础接入。状态/图像采样是基础观测，
+episode、数据集、导出/质检是上层流程。已选范围直接沿用；模糊接入推荐基础，并集中问一次是否加入
+已发现的录制、遥操作、HIL 或策略。未答复不当作选全部，已授权基础工作或方案可继续。
+明确的单独数据任务不强制整机接入。“全部”可按依赖安排首批，不需要逐项重复审批。
+
+笔记只留范围依据、已选项、已装基础/绑定、缺口及延期入口/用途；以后需要扩展再按相关来源提取。
+不预装全部业务依赖，不把开发能力清单全量灌入日常上下文。
+
+## 接入要交付什么
+
+方案保留四项决定：使用环境和固定依赖；所选来源的去向/维护位置；真实合同字段、单位/帧/时间/状态
+及差距归属；首个可执行目标、输入、产物、调用和判据。实施还要给出以下两张简表的实际结果：
+
+| 能力视图 | 来源与类别 | 已装实现/合同/资源/资产 | 状态与缺口 |
+|---|---|---|---|
+| 每项当前所需基础能力 | 具体模块/符号/版本 | 从 capabilities_list/resources_list 与固定 Profile 取得 | 已安装、待实现、现场待验分别说明 |
+
+| 日常技能视图 | 目标/依赖 | 版本与实际调用 | 证据 |
+|---|---|---|---|
+| 可复用代码方法 | 如状态和选定相机观测、来源/时效/缺项报告 | skills_list/skill_describe，task_run 的真实 skill/parameters | operation、观测/产物、任务结果 |
+
+表是对真实目录的简要解释，不是第二能力数据库或静态全成功看板。说明型 robot_onboarding 与一次
+基础验收脚本均不代替日常代码技能。固定安装后发现并执行该技能，存证、完成成功后归档，
+再验证下一任务/重启可复用。时效来自实际采集时钟与接收事实，未知时钟保留未知，不编造设备反馈。
+
+## 逐能力复用
+
+| 来源对象 | 处理方式 |
 |---|---|
-| "Give me an integration plan" for a robot/camera project | Cover the applicable foundation and gaps; ask once about optional workflows. First checks exercise foundation contracts, with offline/field evidence separated |
-| "Only connect the basics" | Proceed with the foundation; no repeated extension question |
-| "Add recording" after foundation setup | Reuse installed bindings/assets; retrieve only the recording source and necessary dependencies |
-| "Check this dataset" | Perform that data task; do not require whole-robot integration |
+| 独立实现包 | 固定 wheel/版本安装，保留来源和依赖 |
+| 耦合模块 | 只提取需要的选定版本模块到本地包，注明原 SHA 与新维护位置 |
+| 既有服务 | 按真实合同复用唯一 owner；发现/安装不自动启动或重启 |
+| 模型、标定、数据 | 版本引用或必要复制，实例配置留本地 |
+| 任务方法 | 保留目标、适用条件和结果判据，整理为依赖能力合同的代码技能 |
 
-Keep short scope basis, selected items, installed foundation/bindings, missing contracts and
-deferred source/use pointers in existing workspace_note keys. Update those facts when choices
-or evidence change. Deferred workflows need no advance extraction, dependency installation or
-full business catalog in runtime context. Later tasks use relevant notes and source entries.
+唯一设备写入 owner 不等于旧应用 API 永远必经；计算可直接模块复用，必要服务可继续使用。
+不复制整项目/.venv，不用旧源码 PYTHONPATH/editable 作为长期运行依赖，也不自动回写旧来源。
+缺传输、状态、停止/未知效果语义要交具体实现或部署补齐，薄包装不能制造这些事实。
 
-The source-only CLI can return the base plan plus a grouped choice question in its Chinese
-message. Reply with an ordinary new request at the same --project/--usage-root, so the new task
-can retrieve notes; omit --task-id for a new goal. --task-id resumes the original goal and does
-not replace it with a different answer. An external conversational host can retain its normal
-user dialogue. No question service or new Runtime API is required.
+## 原合同与生命周期
 
-Foundation evidence may use installed synthetic/recorded ports: sample named robot state,
-inspect command acceptance versus sampled completion/hold, capture an image, and exercise
-available FK/IK with fixed models/frames. Keep physical feedback, real clock/calibration,
-transport/stop and field validation explicitly pending when untested. The
-[synthetic adapter](../examples/synthetic_adapter/README.md) demonstrates these contracts without
-hardware; its known solver is not general IK. Missing contracts stay in the plan.
+适配包用 `robot_rsi.adapters` entry point 提供工厂；技能包用 `robot_rsi.skills` 发现，沿原 Registry
+显式 discover/enable。Profile 管装配与作用域，Store 管资料/证据，Runtime 是唯一调用分发。
+资源元数据读取不连接设备；连接由显式宿主调用，多个资源可共享同一 owner。
+同一 Runtime 已由宿主连接的资源已满足前提，Agent 复用该状态；仅未连接时调用已有 resource_connect。
+普通运行优先选择已安装日常技能，不重复接入。原生目录的 callable 表示当前客户端暴露，available 仍表示绑定，均不证明现场可用。
+需要连接、采样、task_run 和等待的流程在同一个 Runtime/Python 宿主或 MCP 生命周期内执行。
+一次性 CLI 适合目录/配置查询，跨进程调用不能假定前一次连接仍存在。
 
-## Independent environment and classified integration
+固定任务入口示意（标识符和参数须来自你实际安装的技能）：
 
-Use one Harness usage directory for local extension development/tests, uv configuration,
-profiles and state. The legacy project is a read-only source, not this installation target.
-Harness is a shared installed dependency, not a private
-copy per robot. Multiple profiles can test different environment/role scopes inside this same
-directory; a separate generic validation project or a set of worktrees per robot is unnecessary.
-See the [complete offline environment](../examples/robot_environment/README.md) for reproducible
-wheel builds, a checked-in uv.lock, normal `uv sync --locked --no-dev --no-editable`, execution,
-update and fresh-process reuse. All runtime extensions must be declared; state stays outside .venv.
+```python
+from robot_rsi.contracts import Profile
+from robot_rsi.runtime import Runtime
 
-Prefer an existing independent environment already prepared for Harness. Otherwise create
-pyproject.toml/uv.lock/.venv in the host-selected usage directory. If only a legacy root is
-known, inspect it read-only and establish a separate usage destination before implementation;
-when the host already selected the destination, continue there without routine confirmation.
-A general integration request does not authorize edits to old source, locks, .venv, configuration
-or services. Do not run uv/pip install, upgrade or exact sync in the old environment. Shared uv
-download caches or compatible dependency versions do not make the old mutable environment reusable.
-
-| Source object | Transfer and maintenance |
-|---|---|
-| Independent capability package | Install a fixed version/wheel in the usage environment; retain package source/version |
-| Coupled source module | Extract selected versioned modules into the usage extension package; record original source and new maintenance location |
-| Existing service | Reuse the explicit contract and unique owner; discovery/build/install does not start or restart the service |
-| Model/calibration/data asset | Use a versioned reference or copy only needed data; keep instance configuration and applicability local |
-
-Leave originals in place. Do not copy an entire old project/.venv, make legacy PYTHONPATH/editable
-source a long-term runtime dependency, or automatically write/sync modifications back. Updates to
-the extracted package are maintained in the usage/shared extension location, not silently upstreamed.
-
-Classify relevant sources before implementation: source module/symbol → resource, capability,
-implementation, task skill, asset or configuration → actual contract/version or dependency →
-direct reuse, thin adaptation, extraction or missing (with reason) → artifact/evidence/gap.
-The [example mapping](../examples/robot_environment/integration-map.md) preserves a reusable
-height-inspection method as a code skill, reuses computation and packages recorded inputs/assets;
-the old UI/application entry is unnecessary. Do not register every function as a skill or assume
-the whole old API must remain a service. A missing public contract is a specific handoff.
-
-The host's environment view comes from existing Profile/Runtime/Registry/Store/Assets/bindings.
-AgentHost first/restored input, task_begin, workspace_read and task_context supply these facts;
-MCP initialize gives configuration identity, purpose, qualification and detail entries without
-creating another Runtime. Counts/cards and original query tools bound the view; it is configuration,
-not a health check or live readiness claim. Ordinary runtime does not repeat robot_onboarding.
-
-The English robot_onboarding 1.5.0 workflow permits local candidate edits/build/tests only for
-an explicit implementation request with host-authorized development tools. Ordinary inspection
-stays read-only. The built-in source-only client still has no shell or source-write tools; an
-external coding host keeps its own authorized tools. No prompt grants installation/device rights.
-Existing fixed workflow versions remain immutable. On an existing skill pool, the host explicitly
-runs `robot-rsi --profile PROFILE skill discover` and then
-`robot-rsi --profile PROFILE skill enable robot_onboarding 1.5.0` to select the new version for
-new work; existing task pins retain their version.
-
-Inspection ends with sourced findings/mapping and advice. Save short decisions and sources
-within workspace_note's schema; split topics when needed and keep long explanations in the final
-answer. Reference only successfully saved keys in task_finish, and archive only after finish succeeds.
-Correct failed predecessor calls before advancing. Authorized implementation continues
-through real artifacts, fixed uv installation and necessary calls/validation; a saved plan alone
-does not complete it. Similar device models are discovery clues: reuse follows actual contracts,
-SDK/dependencies and applicable evidence, while instance configuration/calibration stay local.
-Useful shared candidates can retain a brief source/version/check record for maintainers;
-ordinary local work proceeds without automatic uploads/messages or a new approval process.
-
-## First inspection from an installed environment
-
-Use Python 3.12/3.13, the existing Codex CLI and its file-based login. Build/install the wheel
-or use the prepared source environment; no project adapter is needed to inspect source:
-
-```bash
-uv build --wheel --out-dir /tmp/harness-wheels
-uv venv /tmp/harness-env
-uv pip install --python /tmp/harness-env/bin/python /tmp/harness-wheels/*.whl
-/tmp/harness-env/bin/robot-rsi agent run --project /path/to/project "这是我的机器人项目，你看看"
-/tmp/harness-env/bin/robot-rsi agent run --project /path/to/project "继续看看这个项目，给我最小接入建议"
+async def execute(profile_file, task_id, skill, parameters):
+    from pathlib import Path
+    profile = Profile.model_validate_json(Path(profile_file).read_text())
+    async with Runtime(profile) as runtime:
+        # 在同一宿主生命周期，按已授权配置显式连接所需资源。
+        started = await runtime.invoke("task_begin", {"task_id": task_id, "goal": "当前完整目标"})
+        accepted = await runtime.invoke("task_run", {"task_id": task_id,
+            "task_epoch": started["result"]["execution"]["epoch"],
+            "request_id": task_id + "_operation", "skill": skill, "parameters": parameters})
+        return accepted  # 宿主还需等待实际终态、核验目标并 finish/archive。
 ```
 
-Each command without --task-id starts a new native conversation and task. The same selected
-project root maps to the same development/onboarding Store scope, so the second task can find
-saved notes without inheriting the first chat. --task-id preserves explicit task continuation.
-The first entry generates a source-only host configuration with no device resources/capabilities;
-existing --profile paths keep their configured adapters and behavior. Missing paths or login/client
-conditions return an explicit error/handoff rather than guessing or manufacturing integration.
+该示意不提供机器人实现，不自动连接或声称完成。具体 schema 读 tool_describe 和
+[接口参考](interfaces.md)。[独立 synthetic 示例](../examples/synthetic_adapter/README.md)
+演示状态、回执/反馈、相机、已知 FK/IK；它不是一般求解器或现场证据。
 
-The English base instructions are loaded from installed resources/prompts/base.md. AgentHost
-injects them once in native thread/start; MCP initialize uses the same text plus its parameter
-nesting convention. A session records prompt identity, while subsequent turns carry task/delta
-facts. An external MCP client's adoption of instructions depends on that client.
+## 已安装指南与范围事实
 
-robot_onboarding is an installed agent_workflow, discovered with the existing skill tools.
-Its canonical English body lives in resources/robot-onboarding/SKILL.md; the root skills entry
-references it. project_files lists/reads only the selected onboarding/improve root, with bounded
-text and continuation offsets. It rejects traversal, symlinks and excluded state paths; runtime
-and evaluation purposes do not gain source access. It does not execute source or provide a shell.
-Useful outcomes use workspace_note and task_finish evidence, then archive; answers default to
-Chinese and the startup result exposes the actual conclusion in message. No AGENTS file is created
-or overwritten. Source-only task time/tool limits use the existing host controls; token usage is
-observed, with no model token quota.
+`robot-rsi guide base|onboarding|project|integration|interfaces` 按需读取当前安装内容；
+`guide agent` 合并机器引导与项目说明，供 coding 宿主读取。wheel 包含 integration、interfaces、
+project-workflow，规范正文由公共 docs 构建引用，不维护另一份合同。
+原 `harness_read` 仍只分页读 integration/interfaces，带字符 offset/next_offset、全文 SHA、来源、
+分发包/安装身份；缺已装资源时明确失败，不回退读取开发树。tool_describe 给真实 schema，
+有文档不代表该机器人已实现对应能力。
 
-The public [inspection_project](../examples/inspection_project/README.md) is an authored offline
-source fixture, not an unknown real robot or a blind benchmark. Native validation must use an
-external project copy, client workspace/CODEX_HOME and state without development ancestors;
-only authentication is reused, not global skills/history. Scope and OS isolation are distinct.
+环境摘要由原 Profile/Runtime/Registry/Store 自动提供，区分当前安装、任务固定安装及配置态资格，
+不增加必选初始化技能或巡检。运行只加载相关卡片/正文/有效事实。
+旧工作区选择新版 workflow 用 `skill discover`、`skill enable robot_onboarding 1.6.0`，
+旧任务固定正文和安装引用保持。
 
+<a id="first-inspection-from-an-installed-environment"></a>
+## 安装、更新与证据边界
 
-同一项目中接入、运行、局部改进、独立评估与框架答复的命令和完整例子见[项目工作流](project-workflow.md)。
+Python 3.12/3.13 与 uv 管理项目环境。所有运行扩展声明进当前 pyproject/uv.lock，用固定 wheel
+而非锁外 pip/editable 作为部署依赖；启动用环境可执行文件或 `uv run --no-sync`，不运行时装包。
+更新时保留本地文件、配置、状态及旧 wheel，在任务边界选择新版本、uv lock 并 locked sync。
+框架发布不覆盖使用分支；旧镜像 worktree 的转换/恢复由宿主明确执行。
 
-当前可通过一个已安装工厂装配可选机器人、相机、运动学与固定模型/标定数据。内置 mock 与外部 synthetic 样例均可运行；真实设备仍需接入方分别验证。本文只使用公开文件，不依赖开发记录。
+source-only、新 coding 会话、软件合同调用、日常任务复用和现场分别取证；新 coding 交接须实际
+读到项目入口和安装说明、在当前目录编写安装新来源实现、从真实目录选择并 task_run。
+不能把好方案或预装的别的 demo 当作完成。
 
-现有项目的读取/提取由接入 Agent 完成，宿主接收已安装产物；相机/运动学候选可经工具验证并保存为任务绑定。[旧项目完整样例](../examples/project_adapter/README.md)包含来源清单、薄适配与跨进程复用；它是自建离线夹具，不表示任意项目自动接入或真实设备已验。
-
-## 两种接入起点
-
-- **已有 SDK/服务**：按目标寻找所需状态、采集、动作或计算接口，映射公共合同。
-- **已有机器人项目**：从项目入口、相关调用链、设备 owner、配置及测试发现能力。驱动/算法整理为实现，稳定业务方法形成技能，模型/标定形成资产，部署信息进入配置。
-
-接入 Agent 保存一份有来源的能力清单：用途、输入输出、来源模块/符号、依赖和资产、已有证据、尚缺条件、接入方式。已完成能力、需整理模块和人工步骤分开；优先复用已有证据，仅验证新合同涉及的差异。静态发现阶段不启动旧项目或执行未知入口。
-
-产出为适配包、必要技能、配置、资产引用和验证依据。接入使用开发身份；运行 Agent 获取选定产物，不加载源码分析过程或旧项目开发记忆。保留已有设备 owner，后续逐步统一代码归属。
-
-## 整理与交付
-
-1. **先分类已有对象。** 区分设备资源、场景实体、模型/标定等资产、算法实现和工作方法。从现有 SDK、服务或控制程序确认所需能力，保留已有驱动 owner；设备名称和地址留在接入方配置。相机、夹爪和力传感器等可分别提供端口，场景里的普通物体只需观测引用。
-2. **按能力映射。** 对照[公共接口](interfaces.md)，只实现当前任务需要的端口。相机可单独接入；运动学与深度可来自计算包。缺少定位/规划/验证时，先交付可用的底层能力。
-3. **提供适配包。** 使用标准 Python entry point 将工厂交给宿主装配。工厂组合端口与配置；SDK 细节留在包内，业务技能只依赖能力合同。
-4. **先跑离线样例。** 用模拟 SDK 或录制数据验证命名资源、单位、坐标方向、采集时间、回执/未知结果与标定适用性，检查未提供的能力不会影响无关任务。
-5. **保存接入产物。** 输出适配包、匿名配置样例、能力表、模型/标定引用和尚缺条件。实际设备验证单独记录；运行 Agent 按任务读取这些产物。
-
-让接入方 Agent 代为完成上述工作时，可使用基础技能 [robot-onboarding](../skills/robot-onboarding/SKILL.md)。它用于集成工作区，不默认加入机器人日常任务的上下文。
-
-## Agent 建立场景绑定
-
-首次任务中，Agent 依据目标与宿主候选选择资源/provider/资产组合，调用工具做合同核对与必要试用，保存验证依据。后续任务引用已有适用绑定；相关条件变化时才调整和复验。普通成功绑定直接保存，无固定人工审批或老师复核。
-
-宿主提供发现、实际调用与持久化机制，不代替 Agent 的语义选择。记录包含用途、角色到候选的映射、资产/依赖版本及验证依据；沿用现有工作区存储。保存新版本不改变在途任务所用快照，当前状态仍按执行需要读取。
-
-首版功能试用限定已配置只读/计算能力；查询/静态校验不连接设备。证据不足可以保留离线候选与缺项，不能写成现场已验证。缺少底层实现时回到接入流程，日常运行不安装代码或另开设备控制通道。
-
-实际入口是 binding_candidates → binding_validate → binding_save；已有绑定用 binding_read。
-selection 写明 roles、requirements、model_ref/calibration_refs、conditions 与选择理由。
-验证 trials 只接受候选允许的 camera_capture/kinematics_fk/kinematics_ik，保存引用宿主 validation_id；
-修改选择须重新验证，不能附带自报通过字段。新任务带 binding_ref/binding_conditions，
-当前任务也可在第一次操作且未固定绑定前 attach_to_task。previous 引用旧版本，仅变化角色重试。
-schema 和具体字段见[场景工具合同](interfaces.md#场景选择工具与任务引用)。
-
-## 几个分类示例
-
-| 示例 | 如何拆分 | 当前范围 |
-|---|---|---|
-| 末端夹爪与力传感器 | 两项资源可共享 owner；夹持/测力是能力，夹取方法是技能，力曲线是证据 | 用于验证分类；不要求当前实现通用力控 |
-| 导航与地图 | 底盘是资源，地图是资产，定位/路径计算是能力，去指定区域是任务/技能 | 架构预留位置，尚未交付导航支持 |
-| 学习策略 | 权重是资产，推理器是 provider，动作建议是计算结果，应用动作通过执行 owner | 保留现有执行组织，不把推理器当作通用 Agent |
-| 相机标定 | 相机是资源，采样安排是工作流，求解是能力，参数是资产，样本与误差是证据 | 当前扩展验证产物合同，现场标定另行接入 |
-
-这些例子用于检验分类是否通用，不要求安装对应硬件、算法，或为每个名词创建新模块。
-
-## 技能与功能包的区别
-
-“如何接入机器人”“如何整理任务记忆”属于工作流技能；“按已验证步骤抓放物体”属于代码技能。FK、IK、标定求解器和驱动属于能力实现包。机器人型号与现场参数属于配置和数据。只有需要 Agent 安排多步标定时，才另加标定工作流技能。
-
-## 连接 Agent 或应用
-
-`profile.json` 是 Harness 的运行配置，选择已安装适配器及参数、资源与资产版本、存储位置等。`config-check` 只校验配置和适配工厂参数；设备连接及真实输入在运行时按需验证。
-
-一般 Agent 客户端使用 MCP：客户端发现工具说明，模型选择工具，客户端提交调用，Harness 执行后返回结果。当前 `mcp` 子命令使用 stdio，由客户端启动一个本地进程并读写其标准输入/输出。
-
-在客户端的 MCP 设置中填写以下启动信息，替换为自己的绝对路径；具体配置文件的外层格式由客户端决定：
-
-```text
-command: uv
-args: ["--directory", "/absolute/path/robot_harness", "run", "--no-sync", "robot-rsi", "--profile", "/absolute/path/profile.json", "mcp"]
-```
-
-这里的目录必须有框架及适配包已经安装好的环境；`--no-sync` 直接复用该环境。客户端若找不到 `uv`，将 command 填为本机 `uv` 的绝对路径。模型和登录由客户端设置；`mcp` 本身只提供工具，不会启动一次机器人任务。连接后可先调用 `workspace_read` 或 `skills_list` 查看当前信息，再按任务选择工具。
-
-CLI 适合终端或脚本调用；HTTP API 适合自建程序使用。这些入口调用同一 Runtime。当前 `serve` 服务监听 `127.0.0.1`，工具接口使用 Bearer token，凭据从环境变量 `ROBOT_RSI_TOKEN` 读取；它是独立 HTTP API，不是 MCP 的 HTTP 传输。只选当前需要的入口，不必同时启动三种服务。
-
-## 可复现的离线接入
-
-```bash
-uv sync --frozen --group dev
-uv pip install --no-deps -e examples/synthetic_adapter
-uv run --no-sync robot-rsi --profile examples/synthetic_adapter/profiles/shared.json config-check
-uv run --no-sync python examples/synthetic_adapter/demo.py --state-root /tmp/synthetic-integration
-```
-
-完整代码和其余组合见 [外部适配包](../examples/synthetic_adapter/README.md)。shared/robot_only/camera_only/compute_only 四个 profile 使用同一工厂，不改 core 或共用技能。示例刻意没有定位、抓放规划或验证端口；这些能力缺失只阻止抓放，命名状态/命令、相机或计算仍各自可用。compute_only 不创建机器人，也不调用 HOLD。
-
-按实际提供的行为声明各端口的 capabilities（由 SkillBindings.catalog 汇总）；能力版本和方法均需满足合同，不能仅写一个 manifest。工厂只负责装配已有实现；models/calibrations 为固定版本数据，地址/SDK 参数留在工厂自己的 Options。接口定义与字段见 [公共接口](interfaces.md)。集成方法不默认注册为日常任务技能，也不使用虚假的 memory/task entrypoint。
-
-本地验证使用 `uv run --no-sync pytest -q`，避免再次同步环境移除手工安装的示例包。产品目录可用同样命令安装和验证；其中只选通用合同/协议测试，不带项目内部评估套件或来源审计。没有安装外部示例时，其可选测试会明确跳过。
+更多例子：[锁定使用环境](../examples/robot_environment/README.md)、
+[已有项目提取](../examples/project_adapter/README.md)、[项目内改进与反馈](project-workflow.md)。
+MCP 可选：用项目内 `robot-rsi --profile profiles/runtime.json mcp`；独立 HTTP serve 监听回环，
+Bearer 凭据由 ROBOT_RSI_TOKEN 提供，属于另一协议入口，不要求同时启动。

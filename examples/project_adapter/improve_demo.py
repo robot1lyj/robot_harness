@@ -13,6 +13,7 @@ import shutil
 import subprocess
 import sys
 import time
+from importlib.metadata import version as distribution_version
 from pathlib import Path
 
 from pydantic import ValidationError
@@ -242,6 +243,7 @@ def candidates(root):
 
 
 def feedback(root):
+    core_version = distribution_version("robot-rsi-harness")
     issue = json.loads((root / "framework-issue.json").read_text())["issue"]
     prefix = [sys.executable, "-m", "robot_rsi.cli", "--profile", str(root / "runtime-profile.json"), "feedback"]
 
@@ -253,7 +255,7 @@ def feedback(root):
 
     exchange(["export", issue["id"], "--output", str(root / "issue-outbox.json")], "issue-export.json")
     reply = {"id": "fixture-future", "issue_id": issue["id"], "project_id": issue["project_id"],
-             "component": issue["component"], "affected_versions": ">=0.1,<0.2", "target_version": "0.2.0",
+             "component": issue["component"], "affected_versions": "==" + core_version, "target_version": "99.0.0",
              "disposition": "update_available", "handling": "framework", "contracts": ["kinematics.fk"],
              "summary": "Simulated optional covariance proposal; no real framework release",
              "details": "Fixture file supplied by the example host, not an actual maintainer response or installed implementation.",
@@ -264,7 +266,7 @@ def feedback(root):
                                          "summary": "Need covariance frame/unit definition"}),
                 ("range", {"affected_versions": ">=9"}),
                 ("unrelated", {"contracts": ["unselected.contract"]}),
-                ("present", {"target_version": "0.1.0", "disposition": "answered",
+                ("present", {"target_version": core_version, "disposition": "answered",
                              "summary": "Fixture acknowledgement of already-present position contract; no covariance implementation or upgrade"})]
     for name, changes in variants:
         value = {**reply, "id": "fixture-" + name, **changes}
@@ -273,7 +275,7 @@ def feedback(root):
         exchange(["import-reply", str(file)], "import-" + name + ".json")
     op_id = json.loads((root / "reuse.json").read_text())["operation"]["id"]
     exchange(["attest", "fixture-present", "--task-id", "released-new-process", "--operation-id", op_id,
-              "--note", "Selected position-only task passed on already-installed 0.1.0; covariance remains unimplemented."], "attestation.json")
+              "--note", "Selected position-only task passed on the current fixed installation; covariance remains unimplemented."], "attestation.json")
     exchange(["status", issue["id"]], "feedback-status.json")
     page = exchange(["status"], "feedback-page-1.json")
     number = 1

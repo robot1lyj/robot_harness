@@ -1,49 +1,27 @@
-# Existing project → installed candidates → saved task binding
+# 从小型旧项目提取能力与方法
 
-The source is [legacy_lab](../legacy_lab/README.md), an authored offline project fixture without
-a Harness manifest. Its recording reader and mm slider function are included unchanged in the
-adapter wheel. The operator application is unfinished and is neither imported nor packaged.
-[Capability inventory](capabilities.json) distinguishes source, dependencies, tests and gaps.
-This self-test is not a blind integration of an unknown project or physical camera evidence.
-
-For the normal locked deployment route and extracted height-inspection task, use the
-[single robot usage directory](../robot_environment/README.md). It declares both core and
-extension wheels, survives normal uv sync, and keeps sources/tests/configuration/state together.
-The editable commands below are developer-only exercises of the older binding sample.
+本例从 legacy_lab 选取计算、录制数据和已有检查方法，独立打包为 lab_adapter。
+旧应用入口/UI不进入运行依赖；固定扩展wheel安装后才能装配，不启动旧服务。
 
 ```bash
-uv sync --frozen --group dev
-uv pip install --no-deps -e examples/project_adapter
-uv run --no-sync robot-rsi --profile examples/project_adapter/profile.json config-check
-uv run --no-sync robot-rsi --profile examples/project_adapter/profile.json call binding_candidates '{"requirements":{"camera.capture":1}}'
-uv run --no-sync python examples/project_adapter/demo.py --state-root /tmp/lab-binding --task first --selection examples/project_adapter/example-selection.json
-uv run --no-sync python examples/project_adapter/demo.py --state-root /tmp/lab-binding --task second
+uv build --wheel --out-dir /tmp/project-wheels
+uv build --wheel examples/project_adapter --out-dir /tmp/project-wheels
+robot-rsi init /tmp/project-use --core-wheel /tmp/project-wheels/robot_rsi_harness-0.2.0-py3-none-any.whl
+cd /tmp/project-use
+uv add /tmp/project-wheels/robot_rsi_lab_adapter-0.3.0-py3-none-any.whl
 ```
 
-The first demo replays the **explicit supplied choice**; it does not claim to make an Agent decision.
-The second command starts a new host process and task with the saved binding, without discovery,
-selection or repeated trials. Both runs finish and archive the explicit read/calculation goal; output
-separates operation status from task_result. Use a fresh state directory for a new first run: saved versions are immutable.
-For wheels use `uv build --wheel examples/project_adapter`; its build includes only four specified
-legacy source/data files. Importing the old application or starting a service is unnecessary.
+本例 profile 令 default_ports=false：两套相机(detail 12×8 / survey 4×3)和FK(250/200mm)候选可发现，
+宿主按实际输入选择并绑定固定模型/内参。显式设default_ports=true时保留survey默认端口。
+没有运动、IK、实时新鲜度或结果识别。录制时间原样保留，要求实时max_age会拒绝；名义标定与公式
+只证明这份离线夹具。
 
-There are two camera candidates (detail 12×8 / survey 4×3) and two FK candidates (250 / 200 mm
-fixture height). The public profile leaves both default ports empty (`default_ports=false`);
-the Agent can discover candidates, then the sample choice binds detail and its named assets for its task.
-Hosts that explicitly set default_ports=true retain survey as their unbound default.
-No candidate provides motion, IK, live freshness or result recognition. Recordings keep their original
-capture timestamp; asking for a live max_age fails. Calibration metadata and known formula agreement
-only validate this offline fixture.
+通过 binding_candidates、binding_validate、binding_save、binding_read 和 task_begin 的绑定引用接入。
+选择是数据，不是可执行代码；保存须匹配实际校验结果。已有任务只在无操作/未固定绑定前attach_to_task，
+以后复用摘要与变化，只校验改变的角色，旧任务/未决操作保持，不授权重放。
 
-Agent integration uses `binding_candidates`, `binding_validate`, `binding_save`, `binding_read` and
-`task_begin(binding_ref, binding_conditions)` as described in [interfaces](../../docs/interfaces.md).
-Selection is data, not executable code. Saving requires host-produced matching evidence. For a task
-already established, attach_to_task is allowed only before any operation and before a binding is fixed.
-Read summary/changes on reuse; submit only changed roles to validation with previous=the old reference.
-Older task references and unresolved operations are retained; the binding does not authorize replay.
-
-For same-project local code improvement, three-mode evaluation, release, fresh-process reuse and
-issue/reply exchange, follow [project workflow](../../docs/project-workflow.md).
-`improve_demo.py --root NEW_DIRECTORY` performs the documented literal patch on a local skill
-package while installed Harness code stays frozen. Maintainer replies are explicitly simulated.
-This deterministic protocol replay does not claim native Agent autonomy or a real framework release.
+lab_inspect_height 是可复用代码方法，依赖相机和FK，返回区间判定与证据；不是单纯拟建包名。
+完整固定安装/执行见[使用环境例子](../robot_environment/README.md)。
+局部改进、三模式评估、发布与新进程复用见[项目工作流](../../docs/project-workflow.md)。
+improve_demo.py 在新root做已说明的字面补丁；框架代码不变，维护者答复为模拟文件，
+该确定性协议不冒充原生模型或实际公共发布。

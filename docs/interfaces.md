@@ -1,43 +1,34 @@
 # 对象与能力接口
 
-## Installed contract mapping entry
+## 已安装合同与字段映射
 
-Use `harness_read(guide="interfaces")` for this installed guide and `tool_describe(name=...)`
-for a chosen tool's input schema; both are read-only. Follow returned character offsets.
-The table summarizes existing contract v1 fields; definitions/validators in the installed
-Python contract classes remain authoritative. A schema is distinct from an available provider.
+通过 harness_read(guide="interfaces") 分页读取本指南，tool_describe(name=...) 查询实际输入 schema。
+这些只读入口描述公共合同，不证明当前机器人有实现。以下概述 v1；精确字段/验证由安装代码拥有。
 
-| Contract/tool | Mapping facts |
+| 合同/工具 | 需要核对的事实 |
 |---|---|
-| kinematics.fk / FKRequest | model_ref={id,version}, arm, joints={named_joint:value}, base_frame, target_frame. Names/limits/units follow the selected RobotModel (prismatic metres, revolute radians); FK is computation, not sampled state or motion |
-| FKResult / Transform | model_ref, pose={target_frame,source_frame,matrix}, source, qualification. pose is T_base_target, a rigid 4×4 matrix with translations in metres and last row [0,0,0,1]. State the source-to-target frame convention and any unit conversion |
-| RobotModel | reference, resource_id, joints (id/kind/lower/upper/tolerance), manipulators (arm→joint names), frames, parameters, source, qualification; assets have fixed id/version and task references |
-| camera.capture / CameraObservation | id, camera, source, qualification, received_at and at least one image frame. ImageFrame needs stream_id, artifact_id, width, height, encoding (rgb8/mono8); frame_id, capture_time and intrinsics may be absent for qualified preview. Missing image data is a source gap; missing optional preview metadata is not automatically a framework gap |
-| CaptureTime | value_s, kind (unix/device_monotonic), clock_domain, optional uncertainty_s. Preserve acquisition provenance; receipt time cannot replace an unknown acquisition time. Precision/synchronization/depth have additional applicability requirements |
-| robot.state / RobotState | id, resource_id, model_ref, named joints, optional tools, capture_time, received_at, boot_id, epoch, source, qualification. A calculation or SDK function name does not supply measured feedback, restart identity or completion semantics |
-| task_run / task_finish | Execute an installed code skill with request_id, skill, parameters and current task identity/epoch. skill_describe supplies its input/output contract; finish the whole goal with actual operation/evidence refs, then archive. A plain check can be a code method without a new generic data capability |
+| kinematics.fk / FKRequest | model_ref={id,version}、arm、命名 joints、base_frame、target_frame。关节/限位依所选 RobotModel；移动关节用米、转动用弧度。计算不是采样状态或运动 |
+| FKResult / Transform | model_ref、pose={target_frame,source_frame,matrix}、source、qualification；T_base_target 为刚性4×4变换，平移用米，末行为[0,0,0,1]。说明帧方向与单位换算 |
+| RobotModel | reference、resource_id、joints(id/kind/lower/upper/tolerance)、manipulators、frames、parameters、source、qualification；资产有固定 id/version 与任务引用 |
+| camera.capture / CameraObservation | id、camera、source、qualification、received_at 与图像帧；ImageFrame 有 stream_id、artifact_id、尺寸/编码。合格预览可缺 frame_id/capture_time/intrinsics；图像本身缺失是来源缺口 |
+| CaptureTime | value_s、kind(unix/device_monotonic)、clock_domain、可选 uncertainty_s。保留采集来源，接收时间不能顶替未知采集时间；同步/精定位另需适用证据 |
+| robot.state / RobotState | id、resource_id、model_ref、命名 joints、可选 tools、capture_time、received_at、boot_id、epoch、source、qualification。计算或SDK函数名不能制造实测反馈/重启身份 |
+| robot.command | 原操作 owner 提交，区分 accepted 回执与采样完成反馈，取消/停止及未知效果沿原操作语义 |
+| task_run / task_finish | request_id、skill、parameters、当前任务/epoch；skill_describe 给所选技能合同。用真实 operation/evidence 完成完整目标后归档；简单检查不必另建通用 provider |
 
-For each source distinguish direct fields, computable conversions, absent source/device data
-and unsupported public semantics; assign the missing part to its actual adapter/method,
-asset/configuration, source/device owner or specific framework change. Do not fabricate fields
-merely to make a source appear to implement a contract.
+来源映射区分直接字段、可计算转换、来源/设备缺项及未支持的公共语义；差距归具体适配/方法、资产、
+来源owner或框架修正，不能编字段让来源看似满足合同。
 
-## Host environment facts
+## 环境与项目事实
 
-Environment identity reuses `station/namespace`, with the original role and Store scope; project
-ID/purpose remain separate. No scope migration or new environment database occurs.
-`task_begin` adds `environment` to its result. `workspace_read` and task_context workspace blocks
-carry the same projection: configuration-only qualification, tool scope, installation digest,
-bounded capability/resource/skill cards and detail tools, task-fixed asset/skill references and
-binding summaries. Counts/omissions are explicit; full instructions/dependency lists and live
-observations remain at their original tools. Existing environment arms/cameras/frames remain.
-For an oversized context, the reference entry includes minimum identity/purpose/qualification
-and points to workspace_read; it never pretends full constraints were delivered.
+station/namespace 与原 role/Store 继续隔离；项目 ID/purpose 是另一维度，不迁移作用域或增加数据库。
+task_begin、workspace_read、task_context 共享配置态环境投影，提供安装身份、有限目录卡/计数、
+详情入口、任务固定资产/技能和绑定。完整说明与实时观测仍按原工具读取。
+超大上下文保留身份/用途/资格及完整入口，不声称全部约束已送达。
 
-MCP initialize automatically includes configuration identity, purpose, qualification and detail
-entries. It does not construct an additional Runtime or imply a device connection. `mcp --project`
-shares the source-only profile helper with `agent run --project`; --profile and --project conflict.
-Missing roots return project_not_found. Native source-only tool permissions are unchanged.
+MCP initialize 给配置身份/用途/资格，不构造另一个 Runtime、不隐式连接。
+source-only mcp --project 与 agent run --project 共用 helper，--profile 与 --project 冲突，
+缺来源根返回 project_not_found。init/guide 是宿主CLI，不扩大运行模型的文件/设备权限。
 
 本文面向适配器作者。先按职责分类对象，再选择所需端口。Scene、Manipulation、OutcomeVerifier、CameraPort、DepthPort、统一适配工厂、命名设备命令、KinematicsPort 与模型/标定读取已实现并有离线 synthetic 样例。下列其他对象是设计覆盖示例，不表示已有对应实现；精确字段与工具 schema 以安装版本为准。
 
@@ -76,6 +67,10 @@ Missing roots return project_not_found. Native source-only tool permissions are 
 相机、力传感器都属于传感资源，各自的数据合同仍保留类型与单位。底盘运动、灵巧手、力控和可控工装尚无通用已实现端口；需要时按其语义增加合同，不通过套用机械臂命令来宣称支持。
 
 ## 能力与 Agent 视图
+
+原生会话的 tools_list/tool_describe 标明 tool_scope=native_agent：available 沿原含义表示底层能力绑定，
+callable 表示该客户端实际暴露此工具，两者不替代执行准入。原生入口提供既有 resource_connect 和 robot_state，
+仍经同一 Runtime/会话身份/资源 owner；目录发现不连接，也不授权设备。同 Runtime 已连接的资源可直接复用。
 
 按行为区分描述/观测、感知/估计、计算/规划、执行/控制和验证/记录。每项能力说明真实效果：例如策略推理可以只输出动作建议，由执行端口应用；测量流程也可能需要移动探针，必须把执行步骤表达出来。
 

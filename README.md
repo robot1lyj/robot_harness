@@ -1,157 +1,73 @@
 # Robot RSI Harness
 
-**让通用 Agent 使用已有的机器人软件、设备与算法。**
+让已有 coding Agent 在自己的机器人项目中实现、发现和使用能力与任务技能。
+框架负责统一合同、执行、版本、任务和记忆；使用项目负责本地实现、配置、资产和日常方法；
+coding 宿主保留原有文件、终端和授权。框架不依赖 ROS 2，也不接管设备控制器。
 
-Robot RSI Harness 提供机器人任务的运行框架：统一能力接口、技能调用、任务状态、上下文与记忆，以及版本化的技能管理。使用方把自己的机器人和算法接入这些接口，再由 Agent 根据任务选择和调用。
+## 从当前使用目录开始
 
-本仓库发布框架源码、接入规范和基础技能。具体机器人的驱动、现场配置、模型权重和业务技能由使用方项目提供。
+准备固定 core wheel，在你选定的机器人使用目录运行：
 
-[项目架构与代码导航](docs/architecture.md) · [接入指南](docs/integration.md) · [接口参考](docs/interfaces.md) · [文档目录](docs/README.md)
+```bash
+uv tool run --from /path/robot_rsi_harness-0.2.0-py3-none-any.whl robot-rsi init . \
+  --core-wheel /path/robot_rsi_harness-0.2.0-py3-none-any.whl --source /path/legacy-project
+uv run --no-sync robot-rsi guide agent
+```
 
-## 使用这个框架能获得什么
+已有安装也可直接用 `robot-rsi init`。初始化生成独立 pyproject、既有 Profile、中文 README
+和短 AGENTS 桥接，再由 uv 创建锁与安装。旧来源不动，框架只是固定依赖；不会安装硬件 SDK、
+连接设备或虚构机器人能力。`--no-sync` 只生成文件，之后显式运行 `uv lock` 和
+`uv sync --locked --no-dev --no-editable`。
 
-**把已有能力变成 Agent 可以发现、调用，并在后续任务中复用的工具和技能。** 使用流程是：接入已有软件 → 按任务选择技能 → 调用能力执行 → 保存结果与适用经验 → 下次任务继续复用。
+若当前目录仍是框架工程，init 会报告角色冲突；它不会偷偷另建隐藏使用目录。
+已有项目声明/配置保持不变，已有 README/AGENTS 保留，需合并的入口放在 `.rsi/harness/`。
+重复初始化不覆盖项目文件。详细边界见[接入指南](docs/integration.md)。
 
-| 希望获得的效果 | 框架怎样支持 |
+## 让现有 Agent 直接实施
+
+在当前使用目录启动已有 coding Agent，只需表达普通需求，例如：
+
+> 在当前目录接入这个项目的基础能力，完成一次机器人与相机观测任务，旧项目不动。
+
+产品生成的 AGENTS 引导它读取当前安装的 `guide agent`，并查看 development/runtime Profile。
+它直接使用宿主已经提供的编辑、终端工具，不必先启动另一个只读子 Agent。
+`robot-rsi agent run --project SOURCE` 仍适合只读方案，不是具有开发工具的 coding 宿主。
+
+默认接入适用的环境、控制/状态、FK/IK、相机与模型/标定资产；录制、遥操作、HIL、策略推理
+由用户选择，后续按任务增量引入。明确的单独数据任务仍保持其目标。
+
+## 看见实际能力与技能
+
+```bash
+uv run --no-sync robot-rsi --profile profiles/runtime.json call capabilities_list
+uv run --no-sync robot-rsi --profile profiles/runtime.json call resources_list
+uv run --no-sync robot-rsi --profile profiles/runtime.json call skills_list
+uv run --no-sync robot-rsi --profile profiles/runtime.json call skill_describe '{"name":"YOUR_SKILL"}'
+```
+
+初始化时能力目录为空是正常事实。接入实施必须产生固定安装的能力实现和至少一个日常代码技能，
+例如状态与选定相机观测、来源/时效/缺项报告；再通过 `task_run` 实际执行、存证、完成和归档。
+接入说明技能和一次验收脚本不代替日常任务。相机采样不是数据集录制，计算 FK 不是实测状态，
+命令被接受也不等于目标完成。
+
+CLI、MCP、Python 宿主和独立 HTTP API 复用同一 Runtime。需保持连接和等待操作的流程使用同一
+Runtime/MCP 生命周期；多个一次性 CLI 进程不会保持同一个设备连接。具体合同由实际 schema 拥有。
+
+## 项目与框架分别维护
+
+使用项目保存 extensions、skills、profiles、assets、uv.lock/.venv 和 `.rsi/state`。
+框架开发仓库与净产品发布共同维护公共实现；升级使用项目时更新固定 wheel/依赖与锁，
+在任务边界安装，保留本地扩展、配置、记忆、旧 wheel 与任务引用，不做产品整树覆盖。
+
+| 目的 | 入口 |
 |---|---|
-| 复用已有机器人软件 | 将已有驱动、相机、运动学和算法包装为统一接口；Agent 读取能力说明和参数合同来调用 |
-| 常规任务减少模型介入 | 稳定步骤交给代码技能或策略；需要选择方法、处理缺口时再由 Agent 决策 |
-| 技能增加后，上下文仍保持精简 | 先检索技能简介，再加载选中技能；任务视图只提供必要信息和变化，完整资料按引用读取 |
-| 跨任务保留已有成果 | 保存能力绑定、任务检查点及带适用条件的经验；新任务复用有效成果，设备当前状态重新观测 |
-| 独立扩充算法和任务方法 | 适配包、技能包通过扩展入口接入；满足已有合同的新增实现可以在使用方项目内迭代 |
-| 改进有依据、版本可追溯 | 用独立评估比较候选技能，在任务边界启用版本；执行中的任务固定引用，保留回退路径 |
+| 最短启动、接入与实际交付 | [接入指南](docs/integration.md) |
+| 项目内实施、运行、更新和反馈 | [项目工作流](docs/project-workflow.md) |
+| 职责、四层与源码位置 | [架构导航](docs/architecture.md) |
+| 端口、能力、数据字段和工具 | [接口参考](docs/interfaces.md) |
+| 测量方法与已验结果 | [性能说明](docs/performance.md) |
+| 按需查阅示例 | [文档目录](docs/README.md) |
 
-技能描述表达任务方法，设备地址、SDK 和部署位置由适配实现及配置承接。这使同一方法有机会在满足能力要求的不同项目中复用。框架不依赖 ROS 2。
-
-## 效率设计与已验证结果
-
-优化重点是 **Agent 的决策、工具往返和上下文开销**：
-
-- **代码执行优先**：已覆盖完整目标的代码流程可直接运行，避免每个内部步骤都调用模型。
-- **上下文按需加载**：复用任务会话，发送必要信息及变化块，减少重复说明和无关历史。
-- **宿主等待操作结果**：在框架管理的 Agent 会话中，由宿主等待执行结束或有效事件，减少模型反复查询进度。
-- **绑定和版本复用**：已验证的绑定可以跨任务、跨进程复用；相关依赖发生变化时再检查。
-
-在相同模型、任务输入和模拟设备条件的内部前后对比中，正常任务的 Agent 工具调用从 **10 次降到 5 次**，可恢复失败任务从 **12 次降到 8 次**。这两组均为真实 Agent 调用模拟能力、各一次成功前后样例，体现调用链的改善；稳定延迟、费用和真机效果还需要更广泛测量。详见[性能方法与样例结果](docs/performance.md)。
-
-这些优化发生在机器人任务的组织层；伺服控制频率、深度推理速度和设备动作时间由对应控制器、算法与硬件决定。
-
-## 框架负责什么
-
-| 职责 | 提供的能力 |
-|---|---|
-| 接入 | 将已有 SDK、控制程序、相机和计算包组织成统一能力，由宿主配置装配 |
-| 执行 | 调用技能，管理操作状态、等待、取消、结果和证据 |
-| 上下文与记忆 | 按任务加载技能说明、当前状态和适用经验，保存检查点并支持归档 |
-| 版本与改进 | 注册和启用技能版本，固定任务所用版本，支持候选评估、更新和回退 |
-
-Agent 负责理解目标和选择方法；设备控制器、算法包负责具体执行。Harness 连接两者，并保存可追溯的任务过程。
-
-## 从自己的机器人项目开始
-
-### 1. 安装框架
-
-需要 Python 3.12 或 3.13，以及 uv。在本仓库根目录执行：
-
-```bash
-uv sync --frozen --no-dev
-uv run --no-sync robot-rsi --version
-```
-
-### 2. Inspect your project with one request
-
-With the existing Codex CLI/login available, provide a directory and an ordinary request:
-
-```bash
-uv run --no-sync robot-rsi agent run --project /path/to/robot-project "这是我的机器人项目，你看看"
-```
-
-No adapter profile, material index or long AGENTS file is required for this first inspection.
-The installed English base prompt routes the Agent to a discoverable onboarding workflow;
-source access is read-only and scoped to this root, with no device owner or mock capabilities.
-The result includes a generated task ID and the actual Chinese conclusion in `message`.
-Inspection does not install adapters or claim hardware integration.
-
-A new invocation creates a fresh task/client conversation while reusing sourced project notes:
-
-```bash
-uv run --no-sync robot-rsi agent run --project /path/to/robot-project "继续看看这个项目，给我最小接入建议"
-```
-
-Use `--task-id ID` to resume an explicit task instead. State defaults to the user data directory;
-`ROBOT_RSI_STATE_ROOT` can select a separate data root outside the inspected source. Model/login configuration follows the existing
-Codex client. The client workspace is separate from the inspected source, and user AGENTS files
-are never overwritten. See [integration](docs/integration.md) for wheel installation and scope.
-Request actual adapter implementation only after deciding what should be integrated; the
-[onboarding workflow](src/robot_rsi/resources/robot-onboarding/SKILL.md) and public contracts guide it.
-
-For an actionable plan, add the separate target with `--usage-root /path/to/robot-use` and ask
-“这是我的机器人项目，给我一个能开始实施的接入方案。” The target is a host fact, not automatic
-installation or write permission. Installed `harness_read` and `tool_describe` make the public
-guides/contracts available on demand; the plan includes environment, destinations, field mappings
-and a first runnable task. See [source/target usage](docs/integration.md#source-usage-target-and-an-actionable-plan).
-
-Initial robot integration prioritizes an applicable independent environment, control/state,
-FK/IK, camera observations and supporting assets. Recording, teleoperation, human-in-the-loop
-and policy workflows are optional: an unspecified request gets one grouped choice question,
-while an explicit scope is reused. Later tasks can add selected workflows from the old source
-without copying the whole application. A specific data task keeps its own goal. See
-[foundation and scope examples](docs/integration.md#foundation-first-optional-workflows-by-choice).
-
-### 3. 让 Agent 调用框架
-
-Keep one Harness usage directory per robot for local extensions/tests, uv.lock/.venv,
-profiles and state. The legacy project and its environment remain unchanged by default;
-reuse an already prepared independent Harness environment or create one in the selected
-usage directory. The shared Harness remains one global dependency.
-The [locked offline environment](examples/robot_environment/README.md) shows fixed core/extension
-wheels and a runnable extracted task method. Environment facts arrive automatically at startup
-and task entry; no environment initialization skill is required. Declare every runtime extension
-in the lock so normal synchronization preserves it.
-
-接入时生成的 `profile.json` 是**本项目的运行配置单**：指定适配器及其参数、资源与版本、任务数据存放位置等。它让同一套框架知道本次要使用什么能力。“宿主”就是启动并运行 Harness 的程序或环境。
-
-先在装有框架和适配包的环境中检查配置。将 `path/to/profile.json` 换成自己的文件路径：
-
-```bash
-uv run --no-sync robot-rsi --profile path/to/profile.json config-check
-```
-
-`config-check` 会检查配置格式、指定适配工厂是否已安装，以及工厂参数是否符合合同；它不连接硬件，设备实际可用性在后续使用时验证。`uv run --no-sync` 表示使用已准备好的 Python 环境执行命令，保留额外安装的适配包。
-
-然后选择调用入口：
-
-| 入口 | 给谁用 | 在这里的作用 |
-|---|---|---|
-| **MCP**（Model Context Protocol） | 支持 MCP 的 Agent 客户端 | 把工具名称、参数说明及调用结果交给 Agent，适合让 Agent 使用框架 |
-| **CLI**（命令行接口） | 人或自动化脚本 | 在终端检查配置、查询和调用工具；上面的 `config-check` 就是一次 CLI 调用 |
-| **HTTP API** | 自建界面或其他程序 | 通过网络请求查询、调用同一套工具；当前服务入口默认监听本机 |
-
-三个入口共用 Runtime 的能力与执行逻辑，按使用方式选择。使用 MCP 时，把下面的命令配置为客户端的 **MCP 启动命令**，由客户端启动并管理进程；配置中的目录与 profile 使用绝对路径：
-
-```bash
-uv --directory /absolute/path/robot_harness run --no-sync robot-rsi --profile /absolute/path/profile.json mcp
-```
-
-当前 MCP 使用标准输入/输出（stdio）与客户端通信。单独在终端运行会等待客户端消息；启动它本身不会选择模型或开始任务。客户端的模型与登录设置由该客户端管理，连接配置见[接入指南](docs/integration.md#连接-agent-或应用)。
-
-### 4. 在项目中执行和扩充任务
-
-Agent 读取当前工作区、查找适用技能、按需查看调用说明，再执行任务和检查结果。常用入口包括 `workspace_read`、`skills_list`、`skill_describe`、`task_begin`、`task_run` 和 `task_context`。
-
-已有能力直接复用；缺少能力时，在自己的项目中补适配实现或技能包。安装更新后在任务边界选用新版本，运行配置和任务记忆独立保留。
-
-## 仓库怎么读
-
-| 路径 | 用途 |
-|---|---|
-| `src/robot_rsi/` | 框架的 Python 实现：接口、运行器、上下文、记忆、技能管理和适配入口 |
-| `skills/robot-onboarding/` | 供接入方 Agent 使用的基础接入技能 |
-| `docs/` | 公共架构、接入方法和接口说明 |
-| `examples/` | 接口和扩展包的参考示例 |
-| `configs/` | 配置样例 |
-| `tests/` | 框架与接口测试 |
-
-`robot_rsi` 是 Python 导入包名，安装发行名是 `robot-rsi-harness`，命令行入口是 `robot-rsi`。包内各模块的职责见[代码导航](docs/architecture.md#代码导航)。
-
-当前框架已通过软件与离线案例验证；真实设备支持及效果由适配实现和现场验证确定。
+当前历史证据覆盖所列软件合同、原生方案和离线任务；它们不代表任意项目自动接入或真实设备已接管。
+实际 coding 项目交接与现场状态分别取证。token 只观测；常规执行优先稳定代码和有效绑定，
+模型处理任务选择与缺口，不增加每步总结或固定重复复核。

@@ -1,19 +1,19 @@
-# 同一个项目中运行、改进与反馈
+# 在同一使用项目实施、运行与改进
 
-Keep one Harness usage directory per robot for local extension development/tests, installed
-uv environment, profiles and state; the legacy source/project environment stays unchanged by
-default. Reuse a prepared independent Harness environment or create one in the selected usage
-directory, not in the legacy .venv. Harness development/release is shared. Environment profiles
-and development/runtime/evaluation scopes express purposes inside this project; no extra generic
-validation project is required. The [locked offline example](../examples/robot_environment/README.md)
-includes a runnable extracted method, saved bindings, same-project scope separation and normal
-sync/restart. Environment facts arrive automatically; onboarding is only needed for relevant
-inspection/integration work. Source-only inspection stays read-only; explicit implementation
-uses only development tools already authorized by its host.
+当前项目的根不是框架工程。用安装后的 `robot-rsi init . --core-wheel CORE.whl --source SOURCE`
+建立独立使用环境，保留当前路径与用户文件。coding 宿主先读 `robot-rsi guide agent`，直接使用
+已有编辑/终端工具实施；内置 source-only agent run 继续只读，不代替 coding 工具。
+配置在 profiles，扩展在 extensions/skills，资产在 assets，新状态默认 .rsi/state。
+CLI 未显式选择时实际读取最近的 tool.robot-rsi.profile，默认运行目录和任务沿该 Profile；
+显式 --profile/ROBOT_RSI_PROFILE 优先，跨角色工作明确选择 development Profile。
 
-For a first source inspection, use `robot-rsi agent run --project PATH "这是我的机器人项目，你看看"`.
-No facts/material index or adapter profile is required. The existing explicit project configuration
-below remains available for configured workflows; see [first inspection](integration.md#first-inspection-from-an-installed-environment).
+接入同时交付实际能力/资源目录和日常技能目录。先用 capabilities_list/resources_list 与
+skills_list/skill_describe 看当前事实，再执行安装的代码技能，例如状态/相机观测及时效缺项报告。
+同一 Runtime 保持连接、等待、存证与结束；多个一次性 CLI 不能共享活连接。后续普通任务按需读取
+有效事实和技能，不再重复源码接入分析。详见[接入与最小调用](integration.md)。
+
+更新框架只改变当前项目的固定依赖、锁和安装，不覆盖本地实现/配置/记忆。保留旧 wheel 和任务引用，
+在正常任务边界更新；项目内改进和公共框架缺口仍按下面已有机制处理。
 
 保留已有项目、适配包和状态目录。宿主 profile.project 指定项目 ID、根目录、本次用途、共同事实键
 与明确的资料索引。用途只路由资料，沿用原身份：onboarding/improve → development，run → runtime，
@@ -102,7 +102,7 @@ uv pip install --python /tmp/project-demo-env/bin/python /tmp/project-wheels/*.w
 使用新 root。示例生成共同/运行/开发/评估资料和原三个 scope 的 profile。首任务保留 offset 缺口，
 实际复制修改本地 skill.py，对好/坏候选各做三组两输入评估，沿原 evaluation/Releases 拒绝或发布，
 最后启动新进程复用并归档。feedback CLI 实际导出问题，导入相关/待资料/版本不匹配/无关夹具，
-用已存在的 0.1.0 位置计算记录选定验证。未来 0.2.0 仅为通知夹具，未安装；位置验证不证明 covariance 已实现。
+用当前固定安装的位置计算记录选定验证。99.0.0 仅为未来版本通知夹具，未安装；位置验证不证明 covariance 已实现。
 
 root 下主要证据为 selected-failure.json、good/bad-report.json、good/bad-evaluation.json、releases.json、
 reuse.json、issue-outbox.json、reply-*.json、import-*.json、attestation.json、feedback-status.json。

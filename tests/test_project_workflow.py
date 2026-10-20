@@ -2,6 +2,7 @@ import importlib.util
 import json
 import subprocess
 import sys
+from importlib.metadata import version
 from pathlib import Path
 
 import pytest
@@ -12,6 +13,7 @@ from robot_rsi.project import Project, ProjectRead
 from robot_rsi.runtime import TOOLS, Runtime
 
 ROOT = Path(__file__).parents[1]
+CORE_VERSION = version("robot-rsi-harness")
 
 
 def test_project_cli_without_host_project_has_structured_error(tmp_path):
@@ -50,7 +52,7 @@ def request(**changes):
 def reply(issue, **changes):
     return FrameworkReply.model_validate({
         "id": "reply_1", "issue_id": issue["id"], "project_id": issue["project_id"],
-        "component": issue["component"], "affected_versions": ">=0.1,<0.2", "target_version": "0.2.0",
+        "component": issue["component"], "affected_versions": "==" + CORE_VERSION, "target_version": "99.0.0",
         "disposition": "update_available", "handling": "framework", "contracts": [],
         "summary": "Simulated future version notice", "details": "Protocol fixture, no real release",
         "migration": "Install target outside active tasks", "validation": "Recompare selected task",
@@ -99,7 +101,7 @@ async def test_feedback_link_version_paths_host_boundary_and_changed_blocks(tmp_
         await runtime.invoke("task_begin", {"task_id": "one", "goal": "run"})
         first = (await runtime.invoke("task_context", {"task_id": "one", "blocks": True}))["result"]
         result = runtime.feedback.import_reply(reply(issue))
-        assert result["status"] == "update_available" and result["installed_version"] == "0.1.0"
+        assert result["status"] == "update_available" and result["installed_version"] == CORE_VERSION
         changed = (await runtime.invoke("task_context", {"task_id": "one", "blocks": True, "delivered": first["delivered"]}))["result"]
         assert "workspace" in changed["blocks"]
         repeated = (await runtime.invoke("task_context", {"task_id": "one", "blocks": True, "delivered": changed["delivered"]}))["result"]
@@ -116,7 +118,7 @@ async def test_feedback_link_version_paths_host_boundary_and_changed_blocks(tmp_
         assert runtime.feedback.import_reply(reply(issue, id="range", affected_versions=">=9"))["status"] == "version_not_applicable"
         assert runtime.feedback.import_reply(reply(issue, id="other", contracts=["unselected.contract"]))["status"] == "unrelated_dependencies"
         assert all(c.get("reply_id") != "other" for c in runtime.feedback.cards())
-        assert runtime.feedback.import_reply(reply(issue, id="present", target_version="0.1.0", disposition="answered"))["status"] == "installed_needs_validation"
+        assert runtime.feedback.import_reply(reply(issue, id="present", target_version=CORE_VERSION, disposition="answered"))["status"] == "installed_needs_validation"
         assert not {"feedback_import", "feedback_attest", "import_reply"} & TOOLS.keys()
         assert not (await runtime.invoke("feedback_import", reply(issue)))["ok"]
         await runtime.invoke("task_begin", {"task_id": "source", "goal": "Read the workflow"})

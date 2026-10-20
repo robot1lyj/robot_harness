@@ -108,7 +108,7 @@ async def run_command(args, profile):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Robot RSI Harness (mock / read-only legacy YAM)")
+    parser = argparse.ArgumentParser(description="Robot RSI Harness：机器人使用项目的能力、技能与任务入口")
     parser.add_argument("--profile", default=os.environ.get("ROBOT_RSI_PROFILE"))
     parser.add_argument("--task-id", help="Associate calls with an existing task budget")
     from importlib.metadata import version
@@ -121,6 +121,13 @@ def main():
     adapter.add_argument("action", choices=["list"])
 
     sub.add_parser("tools")
+    initialize = sub.add_parser("init", help="在当前选定目录建立独立使用项目，不覆盖已有文件")
+    initialize.add_argument("directory", nargs="?", default=".")
+    initialize.add_argument("--core-wheel", required=True)
+    initialize.add_argument("--source", help="只读旧来源目录")
+    initialize.add_argument("--no-sync", action="store_true", help="只生成文件，安装由显式 uv 命令接续")
+    guidance = sub.add_parser("guide", help="读取当前安装的同源 Agent 引导或中文公共指南")
+    guidance.add_argument("section", choices=["agent", "base", "onboarding", "project", "integration", "interfaces"])
     project = sub.add_parser("project", help="Host purpose entry over an existing project and role")
     project.add_argument("--purpose", choices=["onboarding", "run", "improve", "evaluate"])
     project.add_argument("--key")
@@ -243,11 +250,23 @@ def main():
             item.add_argument("--note", required=True)
     args = parser.parse_args()
     try:
-        profile = (
-            Profile.model_validate_json(Path(args.profile).read_text())
-            if args.profile
-            else Profile()
-        )
+        if args.command in ("init", "guide"):
+            from .project_setup import guide, initialize
+
+            if args.command == "guide":
+                print(guide(args.section))
+            else:
+                output(initialize(args.directory, args.core_wheel, source=args.source, sync=not args.no_sync))
+            return
+        source_entry = (args.command == "mcp" or (args.command == "agent" and args.action == "run")) and args.project
+        if args.profile:
+            profile = Profile.model_validate_json(Path(args.profile).read_text())
+        elif source_entry:
+            profile = Profile()
+        else:
+            from .project_setup import default_project_profile
+
+            profile = default_project_profile() or Profile()
         if args.command == "mcp" or (args.command == "agent" and args.action == "run"):
             if args.project:
                 if args.profile:

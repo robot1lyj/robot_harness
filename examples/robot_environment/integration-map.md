@@ -1,19 +1,15 @@
-# Source mapping for the offline environment
+# 离线使用环境的来源映射
 
-This is an authored integration example, not an unknown-project benchmark. The developer
-followed the canonical robot_onboarding workflow to classify and extract the method below.
-The runtime does not load this development analysis as task instructions.
+这是明确作者构造的接入例子，不是未知项目测试。运行不默认加载这张开发分析表。
 
-| Source | Category | Actual contract / dependency | Treatment and reason | Artifact / limitation |
-|---|---|---|---|---|
-| legacy_lab.geometry.tip_mm | computation implementation | kinematics.fk v1, FKRequest/FKResult | reuse unchanged; thin mm→m and frame adapter | lab_adapter.Geometry; bounded slider formula, no IK/collision algorithm |
-| legacy_lab.capture.read_recording | input implementation | camera.describe/capture v1 | reuse unchanged; map timestamp and preview bytes | RecordedCamera; authored recording, never live acquisition |
-| legacy_lab/recordings.json | input data / asset source | CameraObservation + CaptureTime; RobotModel/CalibrationRecord v1 | package selected data, retain original time and explicit synthetic qualification | detail/survey recordings, named model/intrinsics refs; no measured physical calibration |
-| operator_app.inspect_height | stable task method coupled to UI | camera.capture v1 + kinematics.fk v1 | extract sequence and interval criterion, replace UI calls with typed results and operation artifacts | lab_inspect_height 1.0.0; goal, bounds, decision and evidence returned via task_run |
-| operator_app.align_and_move | unfinished application/motion | missing manipulation/verification implementation | leave missing; neither a task skill nor a callable robot API | no motion owner, no device permission, no integration claim |
-| operator_app.__main__ / ui.show | application and UI | none required for the task | exclude from installed wheel; presentation is not execution | environment starts without importing or running the old application |
-| profile + saved selection | environment configuration | Profile + BindingSelection; existing Store scope | use station/namespace/state_root and task-pinned scene/assets | two environments share wheels, isolate notes/tasks/bindings; no new state service |
+| 来源 | 类别与合同 | 处理和产物 | 限制 |
+|---|---|---|---|
+| legacy_lab.geometry.tip_mm | 计算实现，kinematics.fk v1 | 复用选定公式，薄适配毫米→米/帧，lab_adapter.Geometry | 有界滑台，无IK/碰撞算法 |
+| legacy_lab.capture.read_recording | 输入实现，camera.describe/capture v1 | 保留采样时间和预览字节，RecordedCamera | 录制，不是实时采集 |
+| recordings.json | 数据及资产来源，CameraObservation/CaptureTime/模型/标定 | 随包保留detail/survey录制与命名资产引用 | 合成/名义数据，不是物理标定 |
+| operator_app.inspect_height | UI耦合的稳定任务方法 | 提取序列/区间判据为lab_inspect_height 1.0.0；依赖相机/FK，由task_run返回结果与证据 | 缺能力或坏区间明确失败 |
+| operator_app.align_and_move | 未完成的运动流程 | 保留缺失，不伪造技能/API | 无运动owner或设备授权 |
+| __main__/ui.show | 应用/UI | 不打包旧入口 | 环境不依赖旧应用启动 |
+| Profile/保存的选择 | 环境配置，原Store/BindingSelection | 两个scope共享wheel、隔离笔记/任务/绑定 | 无新增状态服务 |
 
-The extracted method is available only when both camera.capture and kinematics.fk v1
-are bound. Its interval result is not physical motion success. A missing capability or
-inverted interval is an explicit failure. The public guide records exact installation commands.
+方法的区间结果不是物理运动成功；精确安装/调用见[本例说明](README.md)。

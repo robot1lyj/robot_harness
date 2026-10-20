@@ -5,7 +5,8 @@
 | 目的 | 入口 |
 |---|---|
 | 了解框架并开始使用 | [项目 README](../README.md) |
-| Inspect a source directory with one request, without an adapter profile | [First inspection](integration.md#first-inspection-from-an-installed-environment) |
+| 初始化当前使用项目并交给 coding Agent 实施 | [接入入口](integration.md#当前目录是使用项目) |
+| 只读了解旧来源，不实施代码 | [方案与 coding 宿主](integration.md#coding-宿主与只读方案) |
 | 理解模块职责、调用关系和源码位置 | [项目架构与代码导航](architecture.md) |
 | 了解效率方法、已有结果与测量范围 | [性能方法与样例结果](performance.md) |
 | 接入已有机器人项目、SDK 或算法 | [接入指南](integration.md)、[robot-onboarding](../skills/robot-onboarding/SKILL.md) |
