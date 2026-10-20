@@ -26,7 +26,7 @@ init 在选定目录生成骨架并运行 `uv lock`、`uv sync --locked --no-dev
 ## coding 宿主与只读方案
 
 coding Agent 在当前项目沿自己的文件/终端工具实施已授权目标。生成的短 AGENTS 指向当前安装的
-`robot-rsi guide agent`：英文 base、规范 robot_onboarding 1.6.0 与中文项目指南同源读取。
+`robot-rsi guide agent`：英文 base、规范 robot_onboarding 与中文项目指南同源读取。
 不复制开发历史或全局配置，不要求先开只能读源码的模型，也不强制 MCP；CLI/Python/MCP 均可调用
 原 Runtime。模板存在不代表模型已读，真实交接要核对实际工具输出与后续产物。
 
@@ -128,7 +128,7 @@ project-workflow，规范正文由公共 docs 构建引用，不维护另一份�
 
 环境摘要由原 Profile/Runtime/Registry/Store 自动提供，区分当前安装、任务固定安装及配置态资格，
 不增加必选初始化技能或巡检。运行只加载相关卡片/正文/有效事实。
-旧工作区选择新版 workflow 用 `skill discover`、`skill enable robot_onboarding 1.6.0`，
+旧工作区选择新版 workflow 用 `skill discover`、`skill enable robot_onboarding 1.6.1`，
 旧任务固定正文和安装引用保持。
 
 <a id="first-inspection-from-an-installed-environment"></a>

@@ -149,7 +149,7 @@ Python wheel 安装运行模块、英文基础提示/规范技能，以及由公
 项目 AGENTS 指向 guide agent。coding 宿主保留文件/终端工具，在当前项目实施，不重开只读子 Agent。
 
 prompts.py 从安装包读取 base 并记录身份，原 AgentHost 的 thread/start 与 MCP 初始化同源。
-robot_onboarding 1.6.0 通过 Registry 按需读取；开发 AGENTS 不发布。
+robot_onboarding 通过 Registry 按需读取；开发 AGENTS 不发布。
 source-only agent run --project 仍用无设备 Runtime/Store/Registry，只读来源并保存方案笔记。
 该路径和真实 coding 实施/日常任务复用分别取证，文件存在不证明模型加载或硬件可用。
 
