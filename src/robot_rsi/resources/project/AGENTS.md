@@ -15,5 +15,7 @@ Keep legacy sources unchanged. Initialization grants no device access; use actua
 and capability evidence. Preserve user files/configuration/history during dependency updates.
 For completed development features/fixes, follow the installed project guide: verify, update the
 existing fact owner/checkpoint, and commit only this work locally; report the actual SHA and gaps.
+The controlled `launch.py coding` entry captures one local handoff and feeds back only missing items
+once in the same session. Other desktop/MCP hosts need their own exit handling; valid checks stay valid.
 Use workspace_context to resume from existing owners; ordinary runtime needs no Git action.
 Answer in Chinese, reporting actual results, freshness and gaps.

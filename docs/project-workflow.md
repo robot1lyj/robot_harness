@@ -36,9 +36,9 @@ git status --short
 用已有 Git 工具选择本次片段或交接宿主处理，不整文件顺带提交。缺 Git、身份、仓库或写权限时，保留成果并
 报告具体条件与“提交未完成”；不虚构 SHA、不改全局身份、不在已有 worktree 中另建仓库。
 
-C08 受控入口允许独立仓库的项目内 `.git` 写入；worktree 的 `.git` 指针若指向项目外公共元数据，
-受控进程不因此获得公共目录权限。交接明确路径、检查结果和当前记忆入口，由已授权宿主在原 worktree
-通过既有终端完成真实提交，再报告 SHA。没有宿主执行能力则如实留待接续；不扩大挂载、不建特权 Git 服务。
+受控入口允许独立仓库的项目内 `.git` 写入；worktree 的 `.git` 指针若指向项目外公共元数据，
+受控进程不因此获得公共目录权限。下述 coding 入口的本地父进程会完成明确范围的宿主提交；其他宿主
+需沿自己的终端接续。没有宿主执行能力则如实留待办，不扩大挂载、不建特权 Git 服务。
 
 接续使用已有 `workspace_context`、`project_read` 和 `workspace_read`：已知 owner/键直接读，缺定位才检索。
 恢复目标、最新约束、已完成及验证范围、未决/未知、下一步和来源，够用就继续。先维护原事实再替换短摘要；
@@ -46,6 +46,37 @@ C08 受控入口允许独立仓库的项目内 `.git` 写入；worktree 的 `.gi
 决策与继续路径，不复制代码/日志。已有提交可引用，本次 SHA 在提交后交付，不为回写自身 SHA 再循环提交。
 有用失败保留症状、尝试、观察和重试条件，假设不变事实；只在相关行为/版本/条件变化时重验受影响部分。
 开发资料和评估答案按原用途隔离，运行只读适用共同事实/方法；便签不代替环境、配置或设备状态 owner。
+
+### 已接入的本地 coding 收尾
+
+下文固定安装的 `launch.py coding` 已接开始/结束处理。它保留原 `codex exec` 的 JSON 事件和明确 session ID，
+启动时记录当前项目/分支/HEAD与已有改动。末尾只收一份结构化交接：本次源码路径、已有验证依据、实际提交、
+可恢复的短检查点和未决项。检查点可以直接在原 development Store 的 `coding_delivery` 记录中，不要求新文件树
+或固定文档改动。验证标明宿主观察的成功命令或 Agent 报告的可读引用/不适用说明；收尾不会替你重跑测试。
+
+空清单或runtime标签不代表代码没改。已有文件事件或轻量Git事实显示源码变化时，补齐本次交接，或用
+`unrelated_changes`的path/reason明确说明他人改动，不自动认领。无关文件/暂存可继续推进，收尾不冻结开始快照；
+本次路径原有混合改动仍按明确范围保留。
+
+独立仓库由受控 Agent 提交。worktree 本地父进程只用固定 Git 操作，提交明确属于本次且开始时干净的文件，
+不运行项目脚本、过滤器或钩子，不开放公共 `.git`。原暂存/无关内容保持；同文件已有混合改动或提交归属不清时，
+留下具体路径待办，不能整文件吞并。缺身份/工具/仓库如实报告，不伪造 SHA。
+
+正常交付不增加模型回合。只有缺项才反馈同一 session，默认最多自动补一回合；仍缺返回码2并保留待办。
+进程退出码0不单独表示交付完成；末尾 `coding.delivery` 的 complete/pending/interrupted 才是该接缝结果。
+中断返回130，不自动恢复；无源码变化不空提交，明确不提交可在外层加 `--no-commit`。普通 `launch.py run` 和
+机器人 task_finish 不加 Git 门禁；未接此收尾的桌面/仅MCP会话仍用手动方法，不能视为已接管。
+
+用末尾记录中的原 session ID 查看或显式接续（保留原模型/权限，不使用 `--last`）：
+
+```bash
+/path/host/core-0.3.2-v1/launch.py coding --project /project --resume-session SESSION_ID --status
+/path/host/core-0.3.2-v1/launch.py coding --project /project --auth /existing/auth.json --network --resume-session SESSION_ID
+```
+
+读取已完成记录不会重跑模型；新目标重新调用 coding。当前入口支持模型、`-c`配置、原隔离/权限选项和输出文件，
+自动加入JSON事件及交接schema，不接受另选cwd/worktree/临时会话或自定义最终schema。实现复用
+[官方非交互JSON与指定会话续作接口](https://learn.chatgpt.com/docs/non-interactive-mode)，不提供任意宿主命令服务。
 
 ## 固定底座与受控入口
 
@@ -57,11 +88,11 @@ manifest或成果格式要保留，只有影响成果/范围的歧义才问。�
 宿主从选定发行 wheel 及固定、带 hash 的运行依赖清单准备**新目录**，不采纳当前可写 venv 的摘要：
 
 ```bash
-robot-rsi host prepare --directory /path/host/core-0.3.1-v1 \
-  --core-wheel /artifacts/robot_rsi_harness-0.3.1-py3-none-any.whl \
+robot-rsi host prepare --directory /path/host/core-0.3.2-v1 \
+  --core-wheel /artifacts/robot_rsi_harness-0.3.2-py3-none-any.whl \
   --core-sha256 APPROVED_SHA256 --requirements /artifacts/dependencies.lock \
   --wheel /project/dist/local_extension.whl --codex /existing/codex
-/path/host/core-0.3.1-v1/launch.py run --project /project -- guide agent
+/path/host/core-0.3.2-v1/launch.py run --project /project -- guide agent
 ```
 
 SHA来自已选择的发行记录。依赖清单不含core/本地包，不含editable，必须有完整版本与hash；宿主用uv
@@ -77,7 +108,7 @@ PYTHONPATH和user-site的同名替换。发现不连接设备；配置不是硬�
 受控coding使用既有Codex CLI（宿主须先提供现成登录文件）：
 
 ```bash
-/path/host/core-0.3.1-v1/launch.py coding --project /project \
+/path/host/core-0.3.2-v1/launch.py coding --project /project \
   --auth /existing/auth.json --network -- \
   --ignore-user-config --dangerously-bypass-approvals-and-sandbox \
   --skip-git-repo-check --model gpt-6.1-sol -c 'model_reasoning_effort="low"' '用户目标'
@@ -91,8 +122,8 @@ PYTHONPATH和user-site的同名替换。发现不连接设备；配置不是硬�
 普通本地更新在已有授权下由宿主执行，无额外固定审批；受控Agent只提交候选：
 
 ```bash
-robot-rsi host update --baseline /path/host/core-0.3.1-v1/approved.json \
-  --directory /path/host/core-0.3.1-v2 --wheel /project/dist/local_extension_new.whl
+robot-rsi host update --baseline /path/host/core-0.3.2-v1/approved.json \
+  --directory /path/host/core-0.3.2-v2 --wheel /project/dist/local_extension_new.whl
 ```
 
 update保留原core wheel/hash与运行依赖，创建新安装，不覆盖旧安装/技能/任务引用；不兼容依赖或核心覆盖/

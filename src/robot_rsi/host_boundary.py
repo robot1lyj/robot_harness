@@ -168,6 +168,9 @@ def main():
     parser.add_argument("--read", type=Path, action="append", default=[])
     parser.add_argument("--auth", type=Path)
     parser.add_argument("--network", action="store_true")
+    parser.add_argument("--resume-session")
+    parser.add_argument("--status", action="store_true")
+    parser.add_argument("--no-commit", action="store_true")
     parser.add_argument("--mode", choices=["run", "coding", "exec"])
     args, arguments = parser.parse_known_args()
     if arguments[:1] == ["--"]:
@@ -194,6 +197,20 @@ def main():
             os.execvpe(argv[0], argv, os.environ)
         if args.project is None:
             raise ValueError("Select the writable project")
+        if args.action == "coding" and not any(p in arguments for p in ("--help", "-h", "--version", "-V")):
+            verify(root)  # trusted selected host code before importing the local exit seam
+            argv = [str(root / "env/bin/python"), "-I", "-B", "-m", "robot_rsi.coding_host",
+                    "--host", str(root), "--project", str(args.project)]
+            for path in args.read:
+                argv += ["--read", str(path)]
+            if args.auth:
+                argv += ["--auth", str(args.auth)]
+            for name in ("network", "status", "no_commit"):
+                if getattr(args, name):
+                    argv.append("--" + name.replace("_", "-"))
+            if args.resume_session:
+                argv += ["--resume-session", args.resume_session]
+            os.execvpe(argv[0], [*argv, "--", *arguments], os.environ)
         argv = command(root, args.project, args.action, arguments,
                        reads=args.read, auth=args.auth, network=args.network)
         raise SystemExit(subprocess.run(argv, close_fds=True).returncode)

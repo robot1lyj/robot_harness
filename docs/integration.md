@@ -8,7 +8,7 @@
 不要把框架根 pyproject 当成使用项目，也不要用发布整树覆盖本地实现。
 
 ```bash
-robot-rsi init . --core-wheel /path/robot_rsi_harness-0.3.1-py3-none-any.whl --source /path/legacy
+robot-rsi init . --core-wheel /path/robot_rsi_harness-0.3.2-py3-none-any.whl --source /path/legacy
 uv run --no-sync robot-rsi guide agent
 ```
 
@@ -137,7 +137,7 @@ project-workflow，规范正文由公共 docs 构建引用，不维护另一份�
 旧任务固定正文和安装引用保持。
 
 授权开发的功能/修复完成后，必要验证、维护原事实/短检查点并本地提交，报告真实 SHA 与未决项；
-普通运行不执行 Git。用 workspace_context0.4.0 和原用途资料续作，不新建记忆体系；提交范围、用户暂存保护
+普通运行不执行 Git。用 workspace_context0.4.1 和原用途资料续作，不新建记忆体系；提交范围、用户暂存保护
 及受控 worktree 的宿主提交见[开发完成与接续](project-workflow.md#开发完成提交与接续)。已有项目入口需合并，不能覆盖用户文件。
 
 <a id="first-inspection-from-an-installed-environment"></a>
