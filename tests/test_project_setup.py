@@ -100,7 +100,7 @@ def test_installed_guide_and_bridge_share_sources_without_checkout_fallback(tmp_
     manifest = json.loads(Path(project_setup.__file__).with_name("resources").joinpath("robot-onboarding/skill.json").read_text())
     text = guide("agent")
     assert base_prompt()["text"] in text and guide("onboarding") in text and path.read_text() in text
-    assert manifest["version"] == "1.7.0"
+    assert manifest["version"] == "1.7.1"
     path.unlink()
     with pytest.raises(HarnessError) as error:
         guide("agent")

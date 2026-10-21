@@ -13,4 +13,7 @@ catalogs and `task_run`. Do not launch a read-only child Agent to replace implem
 
 Keep legacy sources unchanged. Initialization grants no device access; use actual authorization
 and capability evidence. Preserve user files/configuration/history during dependency updates.
+For completed development features/fixes, follow the installed project guide: verify, update the
+existing fact owner/checkpoint, and commit only this work locally; report the actual SHA and gaps.
+Use workspace_context to resume from existing owners; ordinary runtime needs no Git action.
 Answer in Chinese, reporting actual results, freshness and gaps.

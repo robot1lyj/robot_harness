@@ -15,7 +15,8 @@ from email.parser import BytesParser
 from pathlib import Path
 
 from packaging.requirements import Requirement
-from packaging.utils import canonicalize_name
+from packaging.utils import canonicalize_name, parse_wheel_filename
+from packaging.version import Version
 
 from .contracts import HarnessError
 from .host_boundary import sha256, snapshot, verify
@@ -47,8 +48,10 @@ def prepare(directory, core_wheel, core_sha256, requirements, *, wheels=(), uv=N
         if sha256(core_wheel) != core_sha256:
             raise ValueError("Selected core wheel SHA256 differs from the host's expected value")
         name, metadata, core_names = wheel_metadata(core_wheel)
-        if name != "robot-rsi-harness" or metadata["Version"] != "0.3.0":
-            raise ValueError("Choose the core 0.3.0 release artifact")
+        wheel_name, wheel_version, _, _ = parse_wheel_filename(core_wheel.name)
+        if (name != "robot-rsi-harness" or wheel_name != name
+                or wheel_version != Version(metadata["Version"] or "")):
+            raise ValueError("Choose a robot-rsi-harness wheel with matching release metadata")
         selected_core = artifact / core_wheel.name
         shutil.copyfile(core_wheel, selected_core)
         requirements = Path(requirements).resolve(strict=True)

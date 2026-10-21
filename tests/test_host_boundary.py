@@ -68,6 +68,20 @@ def test_wheel_paths_cannot_escape_installation(tmp_path, entry):
         wheel_metadata(wheel)
 
 
+@pytest.mark.parametrize("filename,name,release", [
+    ("other-0.3.1-py3-none-any.whl", "other", "0.3.1"),
+    ("robot_rsi_harness-0.3.1-py3-none-any.whl", "robot-rsi-harness", "0.3.0"),
+])
+def test_selected_core_release_name_and_metadata_must_match(tmp_path, filename, name, release):
+    wheel = tmp_path / filename
+    with zipfile.ZipFile(wheel, "w") as archive:
+        archive.writestr("core.dist-info/METADATA", f"Name: {name}\nVersion: {release}\n")
+    with pytest.raises(HarnessError) as error:
+        prepare(tmp_path / "new", wheel, sha256(wheel), "unused")
+    assert "matching release metadata" in error.value.details["cause"]
+    assert not (tmp_path / "new/approved.json").exists()
+
+
 def test_host_preparation_is_before_project_profile_or_runtime_loading(tmp_path):
     reply = subprocess.run([sys.executable, "-m", "robot_rsi.cli", "--profile", "missing.json",
                             "host", "prepare", "--directory", str(tmp_path), "--core-wheel", "unused",

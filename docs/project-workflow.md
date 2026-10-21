@@ -15,6 +15,38 @@ skills_list/skill_describe 看当前事实，再执行安装的代码技能，�
 更新框架只改变当前项目的固定依赖、锁和安装，不覆盖本地实现/配置/记忆。保留旧 wheel 和任务引用，
 在正常任务边界更新；项目内改进和公共框架缺口仍按下面已有机制处理。
 
+## 开发完成、提交与接续
+
+一次可独立交付的功能或修复完成时，执行必要验证，更新原事实文档和当前短检查点，然后在正确仓库/分支
+做本地 Git 提交，报告实际 SHA、已验范围和未决项。普通观测/运行不执行 Git，不提交数据库、认证或原始日志；
+不是每次编辑都提交。明确要求不提交时遵从，无变化不空提交，WIP 不冒充完成。提交不等于验收、安装或推送。
+
+先检查当前 worktree/分支及已暂存、未暂存内容，只纳入本次路径或必要片段。独立且完全属于本次的文件可用：
+
+```bash
+git status --short
+git branch --show-current
+git add -- src/local_fix.py docs/local_method.md docs/progress.md
+git commit --only -m "Fix local method and record validation" -- src/local_fix.py docs/local_method.md docs/progress.md
+git rev-parse HEAD
+git status --short
+```
+
+这里的路径只是示例，须替换为实际文件；`--only` 避免带入其他路径的暂存内容。同一文件混有他人修改时，
+用已有 Git 工具选择本次片段或交接宿主处理，不整文件顺带提交。缺 Git、身份、仓库或写权限时，保留成果并
+报告具体条件与“提交未完成”；不虚构 SHA、不改全局身份、不在已有 worktree 中另建仓库。
+
+C08 受控入口允许独立仓库的项目内 `.git` 写入；worktree 的 `.git` 指针若指向项目外公共元数据，
+受控进程不因此获得公共目录权限。交接明确路径、检查结果和当前记忆入口，由已授权宿主在原 worktree
+通过既有终端完成真实提交，再报告 SHA。没有宿主执行能力则如实留待接续；不扩大挂载、不建特权 Git 服务。
+
+接续使用已有 `workspace_context`、`project_read` 和 `workspace_read`：已知 owner/键直接读，缺定位才检索。
+恢复目标、最新约束、已完成及验证范围、未决/未知、下一步和来源，够用就继续。先维护原事实再替换短摘要；
+没有相关变化不重写，完成过程转为已有历史引用，不强制新目录或 MEMORY 文件。Git 保存代码差异，记忆只保留
+决策与继续路径，不复制代码/日志。已有提交可引用，本次 SHA 在提交后交付，不为回写自身 SHA 再循环提交。
+有用失败保留症状、尝试、观察和重试条件，假设不变事实；只在相关行为/版本/条件变化时重验受影响部分。
+开发资料和评估答案按原用途隔离，运行只读适用共同事实/方法；便签不代替环境、配置或设备状态 owner。
+
 ## 固定底座与受控入口
 
 固定 wheel/uv.lock 负责可重现，安装身份负责核对内容，Linux bwrap 负责限制指定进程写入；
@@ -25,11 +57,11 @@ manifest或成果格式要保留，只有影响成果/范围的歧义才问。�
 宿主从选定发行 wheel 及固定、带 hash 的运行依赖清单准备**新目录**，不采纳当前可写 venv 的摘要：
 
 ```bash
-robot-rsi host prepare --directory /path/host/core-0.3.0-v1 \
-  --core-wheel /artifacts/robot_rsi_harness-0.3.0-py3-none-any.whl \
+robot-rsi host prepare --directory /path/host/core-0.3.1-v1 \
+  --core-wheel /artifacts/robot_rsi_harness-0.3.1-py3-none-any.whl \
   --core-sha256 APPROVED_SHA256 --requirements /artifacts/dependencies.lock \
   --wheel /project/dist/local_extension.whl --codex /existing/codex
-/path/host/core-0.3.0-v1/launch.py run --project /project -- guide agent
+/path/host/core-0.3.1-v1/launch.py run --project /project -- guide agent
 ```
 
 SHA来自已选择的发行记录。依赖清单不含core/本地包，不含editable，必须有完整版本与hash；宿主用uv
@@ -45,7 +77,7 @@ PYTHONPATH和user-site的同名替换。发现不连接设备；配置不是硬�
 受控coding使用既有Codex CLI（宿主须先提供现成登录文件）：
 
 ```bash
-/path/host/core-0.3.0-v1/launch.py coding --project /project \
+/path/host/core-0.3.1-v1/launch.py coding --project /project \
   --auth /existing/auth.json --network -- \
   --ignore-user-config --dangerously-bypass-approvals-and-sandbox \
   --skip-git-repo-check --model gpt-6.1-sol -c 'model_reasoning_effort="low"' '用户目标'
@@ -59,8 +91,8 @@ PYTHONPATH和user-site的同名替换。发现不连接设备；配置不是硬�
 普通本地更新在已有授权下由宿主执行，无额外固定审批；受控Agent只提交候选：
 
 ```bash
-robot-rsi host update --baseline /path/host/core-0.3.0-v1/approved.json \
-  --directory /path/host/core-0.3.0-v2 --wheel /project/dist/local_extension_new.whl
+robot-rsi host update --baseline /path/host/core-0.3.1-v1/approved.json \
+  --directory /path/host/core-0.3.1-v2 --wheel /project/dist/local_extension_new.whl
 ```
 
 update保留原core wheel/hash与运行依赖，创建新安装，不覆盖旧安装/技能/任务引用；不兼容依赖或核心覆盖/

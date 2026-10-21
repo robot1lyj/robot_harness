@@ -1,19 +1,17 @@
 ---
 name: workspace-context
-description: 进入机器人工作区、查找相关资料或更新工作区备注时，恢复下一步所需信息。
+description: Recover the next useful decision from scoped project owners and notes; write back changed facts and continuation paths.
 ---
 
-# 工作区资料管理
+# Workspace and project continuity
 
-运行技能 ID：`workspace_context`。目标是取得下一步所需信息，然后继续任务。
+Runtime skill ID: `workspace_context`. Retrieve enough relevant information to continue the current goal, then act within existing authorization.
 
-- 初次进入工作区调用 `workspace_read`，获得环境、必要约束和资料入口。当前上下文已有这些信息时直接使用；有相关变更再读取。
-- 同项目资料用 `project_read` 按用途找卡片、按键读正文；按合同区分输入、本地实现和公共缺口。公共问题用 `issue_create` 留最小复现，`issue_get` 读相关答复；收到答复不代表已安装或验证。
-- 有资料缺口时，用 `workspace_read(query="主题")` 找备注卡片，再用 `workspace_read(key="备注键")` 读取需要的正文。已知键则直接读取。
-- 按当前任务用 `skills_list(query="目标")` 找适用技能，选中后调用 `skill_describe(name="技能 ID")`。照其 entrypoint 继续；已有足够信息就执行下一步。
-- 需要场景选择时先用 `binding_read` 读已存引用和相关变化；适用即复用。缺项才以所需合同调用 `binding_candidates`，按目标选 provider/资源/资产并写理由；`binding_validate` 静态核对与明确的只读/计算试用，`binding_save` 引用其宿主证据。新任务用 binding_ref，首次执行前也可保存时 attach_to_task；已固定的任务不换绑定。变化仅重验受影响端口，不能自报通过。
-- 用户提供新资料或原资料发生变化时，用 `workspace_note` 写入 `key`、`title`、`text`、`source`。同一事实沿用原键更新，失效备注用 `archive=true` 移出检索。
+- Reuse supplied environment/workspace facts. On first entry or a relevant change, `workspace_read` gives constraints and routes. Environment, configuration, task state and installed versions retain their existing owners; notes cannot grant permissions or prove live readiness.
+- Read a known owner/key directly. Use `project_read(key=...)` for host-selected project materials or `workspace_read(key=...)` for a note. Search `project_read(query=...)` or `workspace_read(query=...)` only to locate missing information; cards lead to selected bodies, not a full-history read. Authorized coding tools can read the project's existing checkpoint/owner files. Respect development/runtime/evaluation views; development history and evaluation answers do not enter ordinary runtime.
+- When resuming, recover the objective, latest constraints, completed work and actual validation scope, unresolved/unknown conditions, next action and source routes. Follow only the original details needed for that decision. A prior commit records code differences, not present device readiness or authorization. Recheck a conclusion only when a relevant source, behavior, version or condition changed; mark missing evidence and continue independent work.
+- Write changed facts to their original owner first, then replace the current short checkpoint or `workspace_note(key, title, text, source)`. Reuse the same key; unchanged content needs no write. Preserve necessary constraints/unknowns, merge duplicates and move completed process details to existing cold references; use `archive=true` for obsolete notes while retaining useful source routes. Do not require a new directory, MEMORY file, index or schema.
+- Git records code differences; memory records decisions, checked scope, limitations and how to continue. Cite useful paths/versions/previous commits instead of copying code or logs. Report the current commit SHA after committing; no self-referential SHA rewrite/extra commit is needed. Save a useful failure's symptom, tested hypothesis, attempted change, observation and retry condition at its existing owner. Keep hypotheses distinct from facts; one failure is not a permanent ban. Do not repeat an unchanged uninformative attempt.
+- Select methods through `skills_list`/`skill_describe`. Reuse applicable saved bindings through `binding_read`; only missing/changed contracts need candidates, scoped validation and saved evidence. Preserve task-pinned versions. Framework gaps use `issue_create`/`issue_get`; a reply is not an installed or verified fix.
 
-备注记录来源和适用条件；它不修改宿主配置。涉及当前物体位置或设备状态时，通过观测工具获取。常规资料更新直接完成；只在来源冲突影响当前决策时核对相关部分。
-
-需要向用户说明时，简短给出工作区要点、影响当前任务的缺口和下一步。完整历史与无关技能留在库中。
+For authorized development, follow the installed project guide's verify/document/local-commit procedure using the existing host terminal. Preserve unrelated user work; missing commit access stays explicit until the host actually commits. Ordinary robot tasks use their original task/operation evidence without Git actions. No routine approvals, per-step summaries, token quotas or automatic model maintenance calls. Report concise results, gaps and the next useful action in Chinese.
