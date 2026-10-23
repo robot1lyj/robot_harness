@@ -10,6 +10,9 @@ from robot_rsi.skill_result import SkillResult
 
 
 def test_old_exports_are_the_same_objects():
+    from robot_rsi import coding_host, coding_install, host_boundary
+    assert coding_host.sha256 is host_boundary.sha256
+    assert coding_host.CandidateInstall is coding_install.CandidateInstall
     assert runtime.TOOLS is tool_specs.TOOLS
     assert runtime.MOTION_TOOLS is tool_specs.MOTION_TOOLS
     assert runtime.OPERATION_TOOLS is tool_specs.OPERATION_TOOLS
@@ -73,3 +76,20 @@ async def test_runtime_supplies_registry_versions_without_distribution_fallback(
     async with Runtime(profile) as host:
         assert host.memory.skill_versions == host.registry.versions()
         assert {"pick_place", "task_memory", "workspace_context"} <= host.memory.skill_versions.keys()
+
+
+def test_catalog_and_execution_import_without_application_or_client_implementations(tmp_path):
+    script = '''
+import sys
+from robot_rsi import tool_catalog, execution
+from robot_rsi.contracts import Profile
+from robot_rsi.registry import Registry
+registry=Registry(Profile(state_root=sys.argv[1],robot=None))
+assert registry.describe('pick_place')['input_schema']['properties']['arm']
+assert set(tool_catalog.TOOLS)==set(n for f in tool_catalog.FEATURES for n in f.definitions)
+assert not any('robot_rsi.'+n in sys.modules for n in ('feedback','project','scene_bindings','runtime','agent_client','coding_host','coding_git','builtin_tasks.pick_place'))
+registry.close()
+from robot_rsi.runtime import Runtime
+assert not any('robot_rsi.'+n in sys.modules for n in ('agent_client','coding_host','coding_git','builtin_tasks.pick_place'))
+'''
+    subprocess.run([sys.executable, '-c', script, str(tmp_path)], check=True)

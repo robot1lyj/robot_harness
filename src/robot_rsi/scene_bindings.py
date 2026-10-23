@@ -1,6 +1,7 @@
 """Task-bound selections over installed typed ports, persisted in the existing Store."""
 
 from __future__ import annotations
+from .feature_contracts import CandidateInfo, CandidateQuery, BindingSelection, BindingRead, BindingTrial, BindingValidate, BindingSave, Role, Conditions
 
 import hashlib
 from dataclasses import dataclass, replace
@@ -14,19 +15,9 @@ from .contracts import Contract, Finite, HarnessError, Identifier, VersionRef
 from .installation import installation_identity
 from .storage import canonical, uid
 
-Role = Literal["camera", "kinematics"]
-Conditions = dict[Identifier, str | int | Finite | bool]
 PROBES = {"camera_capture": "camera", "kinematics_fk": "kinematics", "kinematics_ik": "kinematics"}
 
 
-class CandidateInfo(Contract):
-    reference: VersionRef
-    description: str = Field(min_length=1, max_length=500)
-    distribution: str = Field(min_length=1, max_length=120)
-    resource_ids: list[Identifier] = Field(default_factory=list, max_length=8)
-    model_refs: list[VersionRef] = Field(default_factory=list, max_length=8)
-    calibration_refs: list[VersionRef] = Field(default_factory=list, max_length=8)
-    conditions: Conditions = Field(default_factory=dict, max_length=12)
 
 
 @dataclass(frozen=True)
@@ -41,46 +32,16 @@ class Candidate:
         return [role for role in ("camera", "kinematics") if getattr(self.bindings, role)]
 
 
-class CandidateQuery(Contract):
-    requirements: dict[str, int] = Field(min_length=1, max_length=8)
-    query: str = Field(default="", max_length=200)
-    limit: int = Field(default=3, ge=1, le=3)
 
 
-class BindingSelection(Contract):
-    scene_id: Identifier
-    purpose: str = Field(min_length=1, max_length=500)
-    reason: str = Field(min_length=1, max_length=500)
-    roles: dict[Role, Identifier] = Field(min_length=1, max_length=2)
-    requirements: dict[str, int] = Field(min_length=1, max_length=8)
-    model_ref: VersionRef | None = None
-    calibration_refs: list[VersionRef] = Field(default_factory=list, max_length=8)
-    conditions: Conditions = Field(default_factory=dict, max_length=12)
-    skills: list[Identifier] = Field(default_factory=list, max_length=8)
 
 
-class BindingRead(Contract):
-    scene_id: Identifier | None = None
-    reference: VersionRef | None = None
-    conditions: Conditions | None = None
 
 
-class BindingTrial(Contract):
-    role: Role
-    tool: Literal["camera_capture", "kinematics_fk", "kinematics_ik"]
-    arguments: dict = Field(default_factory=dict)
 
 
-class BindingValidate(Contract):
-    selection: BindingSelection
-    trials: list[BindingTrial] = Field(default_factory=list, max_length=8)
-    previous: VersionRef | None = None
 
 
-class BindingSave(Contract):
-    reference: VersionRef
-    validation_id: Identifier
-    attach_to_task: bool = False
 
 
 def digest(value):

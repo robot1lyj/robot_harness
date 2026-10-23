@@ -3,9 +3,9 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 [project]
 name = "robot-rsi-inspection-foundation"
-version = "0.1.0"
+version = "0.1.1"
 requires-python = ">=3.12,<3.14"
-dependencies = ["robot-rsi-harness==0.4.0", "robot-rsi-synthetic-adapter==0.3.3"]
+dependencies = ["robot-rsi-harness==0.4.1", "robot-rsi-synthetic-adapter==0.3.4"]
 [project.entry-points."robot_rsi.adapters"]
 inspection_foundation = "inspection_foundation:factory"
 [tool.hatch.build.targets.wheel]

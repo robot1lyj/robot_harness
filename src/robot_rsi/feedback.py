@@ -1,5 +1,6 @@
 """Selected issue/reply files in the original Store, without a notification service."""
 from __future__ import annotations
+from .feature_contracts import IssueCreate, IssueGet
 
 import json
 from typing import Literal
@@ -13,29 +14,8 @@ from .installation import installation_identity
 from .storage import canonical, uid
 
 
-class IssueCreate(Contract):
-    route: Literal["local_input", "local_extension", "framework_contract", "framework_core"]
-    rationale: str = Field(min_length=1, max_length=1200)
-    component: str = Field(min_length=1, max_length=120)
-    expected: str = Field(min_length=1, max_length=1200)
-    actual: str = Field(min_length=1, max_length=1200)
-    reproducer: str = Field(min_length=1, max_length=2400)
-    source_task: Identifier | None = None
-    operation_ids: list[Identifier] = Field(default_factory=list, max_length=8)
-    evidence_refs: list[TaskEvidence] = Field(default_factory=list, max_length=8)
 
 
-class IssueGet(Contract):
-    issue_id: Identifier | None = None
-    kind: Literal["all", "updates", "pending"] = "all"
-    limit: int = Field(default=3, ge=1, le=3)
-    cursor: str | None = Field(default=None, pattern=r"^\d+:\d+$", max_length=50)
-
-    @model_validator(mode="after")
-    def one_lookup(self):
-        if self.issue_id is not None and (self.cursor or self.kind != "all"):
-            raise ValueError("Use issue_id for details or kind/cursor for a listing")
-        return self
 
 
 UPDATE_STATES = {"update_available", "component_not_installed", "installed_needs_validation"}

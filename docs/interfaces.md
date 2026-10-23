@@ -191,3 +191,11 @@ SkillContext 新增可选 operation_id 与 artifacts.read(id)/write(bytes,mime,m
 受控 coding Handoff 可选 candidate_install：wheels（项目内path/sha256）、reason、tasks（当前受影响任务的profile/task_id）。这是同一Agent的中间安装请求，父进程读原任务边界、调用原host update并记录原coding_delivery.candidate_installs，再同session返回新入口继续原目标；不是新的运行工具/审批或最终完成声明。固定core/底座不变，兼容新增依赖由uv生成哈希锁，原role/Store保持。
 
 安装失败回到同session修正本地候选；不重复安装相同失败产物。Handoff.blocked_reason仅用于真实凭据/网络/设备/宿主授权缺项，保存pending而非成功；不是正常安装所需人工审批。
+
+### 公开技能编写入口（core 0.4.1）
+
+`robot_rsi.authoring` 复用 SkillContext/SkillResult，提供 artifact、criterion、result、request_id；
+结果标志显式填写，判据由领域观测决定。`skill create` 模板与
+[技能编写短指南](skill-authoring.md)不要求读取 Runtime/Store/coding_host 源码。
+`evidence --method SKILL --task-id A --task-id B --output FILE` 从原记录导出注册与调用报告，
+可选 --version 固定同一版本；原单任务导出兼容。此入口不自动完成/归档任务或判定方法成功。

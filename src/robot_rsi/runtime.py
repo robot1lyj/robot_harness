@@ -9,37 +9,20 @@ from pydantic import ValidationError
 
 from .adapters import build_adapter
 from .assets import Assets
-from .builtin_tasks.pick_place import PICK_PLACE_VERSION, pick_place
 from .capabilities import PICK_PLACE_REQUIREMENTS, PickPlaceGoal, SkillContext, SkillArtifacts
-from .catalog import public_descriptor
-from .contracts import (
-    HarnessError,
-    Profile,
-    TaskCheckpointGet,
-    TaskRun,
-)
-from .device_validation import confirm_command, validate_command, validate_state
+from .contracts import HarnessError, Profile
 from .environment import environment_summary
 from .feedback import Feedback
-from .guides import read_guide
 from .host import resolve_host
 from .memory import Memory
-from .operations import Operations, operation_resources
+from .operations import Operations
 from .project import Project
 from .registry import Registry
-from .resources import (
-    CommandFeedback,
-    CommandReceipt,
-    FKResult,
-    IKResult,
-    RobotState,
-)
-from .scene_bindings import (
-    BindingRead,
-    SceneBindings,
-)
+from .scene_bindings import BindingRead, SceneBindings
 from .storage import Store, uid
 from .task_context import build_task_context
+from .execution import Execution
+from . import tool_catalog
 from .task_memory import TaskMemory
 from .tool_specs import MOTION_TOOLS, OPERATION_TOOLS, TOOLS
 from .workspace import Workspace
@@ -100,39 +83,79 @@ class Runtime:
 
         self.task_memory.installation_digest = installation_identity()["digest"]
         self.task_memory.resource_versions = self.assets.selected
-        from .agent_state import AgentState
-
-        self.agent_state = AgentState(self)
+        self._agent_state = None
         self.feedback = Feedback(self)
+        self.execution = Execution(self.store, self.registry, self.operations, self.task_memory,
+            bindings=lambda: self.bindings, task_bindings=self.task_bindings, skill_context=self.skill_context)
         self.operations.on_finished = self.operation_finished
         self.operations.on_stage = self.task_memory.stage
-        # Store is the task owner; repair registry references after an interrupted publish.
-        for checkpoint in self.store.all("task_checkpoint"):
-            if (
-                not checkpoint["archived"]
-                and checkpoint.get("execution", {}).get("status", "active") == "active"
-            ):
-                for name, version in checkpoint["skill_versions"].items():
-                    self.registry.pin(checkpoint["task_id"], name, version, restore=True)
-            else:
-                self.registry.release(checkpoint["task_id"])
+        self.execution.restore()
+        features = (
+            tool_catalog.SceneTools(
+                scenes=self.scenes,
+                task_memory=self.task_memory,
+            ),
+            tool_catalog.SessionTools(
+                agent_state=lambda: self.agent_state,
+            ),
+            tool_catalog.ContextTools(
+                context=lambda args: build_task_context(self, args),
+                feedback=self.feedback,
+                memory=self.memory,
+                project=self.project,
+                recall_memory=self.recall_memory,
+                task_memory=self.task_memory,
+                workspace=self.workspace,
+                workspace_brief=self.workspace_brief,
+            ),
+            tool_catalog.TaskTools(
+                _run_skill=self._run_skill,
+                _bindings=lambda: self.bindings,
+                environment=lambda task: environment_summary(self, task),
+                operations=self.operations,
+                profile=self.profile,
+                registry=self.registry,
+                scenes=self.scenes,
+                select_skill=self.select_skill,
+                store=self.store,
+                task_memory=self.task_memory,
+            ),
+            tool_catalog.DiscoveryTools(
+                adapter=self.adapter,
+                _bindings=lambda: self.bindings,
+                depth=self.depth,
+                operations=self.operations,
+                profile=self.profile,
+                provider=self.provider,
+                robot=self.robot,
+                skill_descriptors=self.skill_descriptors,
+                store=self.store,
+                tools=self.tools,
+            ),
+            tool_catalog.ResourceTools(
+                _capabilities=self._capabilities,
+                adapter=self.adapter,
+                assets=self.assets,
+                _bindings=lambda: self.bindings,
+                depth=self.depth,
+                observe=self.observe,
+                operations=self.operations,
+                registry=self.registry,
+                resource_versions=self.resource_versions,
+                robot=self.robot,
+                skill_context=self.skill_context,
+                store=self.store,
+                validate_pick_place=self.validate_pick_place,
+            ),
+        )
+        self._tool_handlers = {name: feature.dispatch for feature in features for name in feature.definitions}
 
-        # Transient operation pins survive a crash, but never authorize replay.
-        operations = {
-            op.get("args", {}).get("request_id"): op for op in self.store.all("operation")
-        }
-        for pin in self.registry.db.execute(
-            "SELECT task FROM pins WHERE workspace=?", (self.registry.workspace,)
-        ).fetchall():
-            if pin[0].startswith("operation:"):
-                op = operations.get(pin[0].removeprefix("operation:"))
-                if (
-                    not op
-                    or op.get("hold_reconciled")
-                    or (op.get("hold") or {}).get("confirmed")
-                    or (not operation_resources(op) and op["status"] != "unknown")
-                ):
-                    self.registry.release(pin[0])
+    @property
+    def agent_state(self):
+        if self._agent_state is None:
+            from .agent_state import AgentState
+            self._agent_state = AgentState(self)
+        return self._agent_state
 
     async def __aenter__(self):
         return self
@@ -267,32 +290,10 @@ class Runtime:
         )
 
     def operation_finished(self, record):
-        self.task_memory.finished(record)
-        if (record.get("hold") or {}).get("confirmed") or (
-            not operation_resources(record) and record["status"] != "unknown"
-        ):
-            self.registry.release("operation:" + record["args"]["request_id"])
+        return self.execution.operation_finished(record)
 
     def select_skill(self, task_id, name):
-        record = self.task_memory._load(task_id)
-        if record["archived"] or record.get("execution", {}).get("status", "active") != "active":
-            raise HarnessError("task_closed", "Closed tasks cannot select new skill bindings")
-        bound = self.task_bindings(task_id, skill=name)
-        selected = self.registry.resolve(name, task_id, bindings=bound)
-        self.registry.pin(task_id, name, selected["version"])
-        try:
-            self.task_memory.select_skill(task_id, name, selected["version"], bound.catalog())
-        except BaseException:
-            # Remove only a newly introduced reference; retain existing owner pins.
-            record = self.task_memory._load(task_id)
-            if name not in record["skill_versions"]:
-                with self.registry.db:
-                    self.registry.db.execute(
-                        "DELETE FROM pins WHERE workspace=? AND task=? AND name=?",
-                        (self.registry.workspace, task_id, name),
-                    )
-            raise
-        return selected
+        return self.execution.select_skill(task_id, name)
 
     def skill_context(self, identity):
         task_id = self.store.get("operation", identity).get("task_id") if identity else None
@@ -433,7 +434,7 @@ class Runtime:
                 self.task_memory.cancel(task_id)
             result = await self._dispatch(name, args, task_id=task_id)
             if agent_session_id and name in ("tools_list", "tool_describe"):
-                from .agent_client import AGENT_TOOLS
+                from .tool_catalog import AGENT_TOOLS
 
                 if name == "tools_list":
                     entries = result["tools"]
@@ -484,441 +485,7 @@ class Runtime:
         return {**response, "call_id": call_id}
 
     async def _dispatch(self, name, args, *, task_id=None):
-        if name == "binding_candidates":
-            return self.scenes.find(args)
-        if name == "binding_read":
-            return self.scenes.read(args, task_id)
-        if name == "binding_validate":
-            return await self.scenes.validate(args)
-        if name == "binding_save":
-            if args.attach_to_task:
-                if not task_id:
-                    raise HarnessError("task_not_started", "Attachment requires the current task")
-                record = self.task_memory._load(task_id)
-                if record["operation_ids"] or record.get("resource_versions", {}).get("scene_binding") or record.get("execution", {}).get("status") != "active":
-                    raise HarnessError("new_task_required", "Bindings are fixed before first execution; use a new task")
-            result = self.scenes.save(args)
-            if args.attach_to_task:
-                bound, versions = self.scenes.resolve(args.reference)
-                record["resource_versions"] = versions
-                record["capabilities"] = bound.catalog()
-                self.task_memory._write(record)
-            return result
-        if name == "agent_session_get":
-            return self.agent_state.status(args.task_id)
-        if name == "assistance_get":
-            return self.agent_state.request(args.task_id)
-        if name == "assistance_claim":
-            return await self.agent_state.claim(args)
-        if name == "assistance_return":
-            return self.agent_state.give_back(args)
-        if name == "task_begin":
-            versions = None
-            capabilities = None
-            if args.binding_ref:
-                bound, versions = self.scenes.resolve(args.binding_ref, args.binding_conditions)
-                capabilities = bound.catalog()
-            try:
-                previous = self.task_memory._load(args.task_id)
-            except HarnessError as exc:
-                if exc.code != "not_found":
-                    raise
-            else:
-                if args.binding_ref and previous.get("execution") and previous.get("resource_versions", {}).get("scene_binding") != args.binding_ref.model_dump():
-                    raise HarnessError("task_conflict", "Task binding is already fixed")
-            result = self.task_memory.begin(args, self.profile.task_limits, versions, capabilities)
-            return {**result, "environment": environment_summary(self, args.task_id)}
-        if name == "task_context":
-            return build_task_context(self, args)
-        if name == "task_finish":
-            result = self.task_memory.finish(args)
-            self.registry.release(args.task_id)
-            return result
-        if name == "task_cancel":
-            record = self.task_memory.cancel(args.task_id)
-            self.registry.release(args.task_id)
-            for identity in record["operation_ids"]:
-                await self.operations.cancel(identity)
-            return self.task_memory.get(
-                TaskCheckpointGet(task_id=args.task_id, include_archived=True)
-            )
-        if name == "task_recover":
-            if prior := self.operations.existing(name, args):
-                return prior
-            original = self.store.get("operation", args.operation_id)
-            if original.get("task_id") != args.task_id:
-                raise HarnessError("task_mismatch", "Recovery evidence belongs to another task")
-            stored_args = dict(original["args"])
-            if "parameters" not in stored_args:
-                stored_args["parameters"] = {
-                    key: stored_args.pop(key)
-                    for key in ("arm", "object_id", "target_region", "grasp_retries")
-                    if key in stored_args
-                }
-            goal = TaskRun.model_validate(
-                {
-                    **stored_args,
-                    "request_id": args.request_id,
-                    "task_id": args.task_id,
-                    "task_epoch": args.task_epoch,
-                }
-            )
-            return await self._run_skill(
-                goal, tool=name, recovery_of=args.operation_id, dedup_args=args
-            )
-        if name == "workspace_read":
-            if args.query is None and args.key is None:
-                return self.workspace_brief(task_id)
-            return self.workspace.read(args)
-        if name == "project_read":
-            return self.project.read(args)
-        if name == "project_files":
-            return self.project.files(args)
-        if name == "harness_read":
-            return read_guide(args, self.task_memory.installation_digest)
-        if name == "issue_create":
-            return self.feedback.create(args)
-        if name == "issue_get":
-            return self.feedback.get(args, task_id)
-        if name == "workspace_note":
-            return self.workspace.note(args)
-        if name == "task_checkpoint_save":
-            self.task_memory.skill_versions = self.registry.versions()
-            result = self.task_memory.save(args)
-            for skill, version in result["skill_versions"].items():
-                self.registry.pin(args.task_id, skill, version)
-            return result
-        if name == "task_checkpoint_get":
-            return self.task_memory.get(args)
-        if name == "task_archive":
-            result = self.task_memory.archive(args.task_id)
-            self.registry.release(args.task_id)
-            return result
-        if name == "camera_describe":
-            self.bindings.require({"camera.describe": 1})
-            return self.bindings.camera.describe()
-        if name == "camera_capture":
-            self.bindings.require({"camera.capture": 1})
-            return (
-                await self.bindings.camera.capture(args.camera, args.require, args.max_age_s)
-            ).model_dump()
-        if name == "capabilities_list":
-            return {
-                "capabilities": self.bindings.catalog(),
-                "resources": self.adapter.describe(),
-                "skills": [public_descriptor(skill) for skill in self.skill_descriptors()],
-            }
-        if name == "station_describe":
-            return {
-                "station": self.profile.station,
-                "backend": self.profile.robot,
-                "qualification": getattr(self.robot, "qualification", "no_robot"),
-                "supported_tasks": [
-                    skill["name"]
-                    for skill in self.skill_descriptors()
-                    if skill["available"] and skill["kind"] == "code"
-                ],
-                "arms": list(getattr(self.robot, "arms", ())),
-                "cameras": [item["role"] for item in self.bindings.camera.describe()["cameras"]]
-                if self.bindings.camera
-                else [],
-                "camera_inputs": self.bindings.camera.describe() if self.bindings.camera else {"cameras": []},
-                "frames": list(getattr(self.robot, "frames", ())),
-                "units": {
-                    "translation": "m",
-                    "rotation": "rad",
-                    "joint_and_tool": "declared by model_get",
-                },
-                "entrypoint": "task_run",
-                "followup": "operation_get",
-                "blockers": self.bindings.missing(PICK_PLACE_REQUIREMENTS),
-                "capabilities": self.bindings.catalog(),
-                "depth_provider": self.provider.readiness()
-                if self.provider
-                else {"configured": self.depth is not None},
-                "physical_availability": "not_checked",
-                "execution_blocked": self.operations.blocked,
-                "execution_busy": any(not task.done() for task in self.operations.tasks.values()),
-                "memory_scope": self.store.scope,
-            }
-        if name == "task_run":
-            return await self._run_skill(args)
-        if name == "tools_list":
-            return self.tools()
-        if name == "tool_describe":
-            if args.name not in TOOLS:
-                raise HarnessError("unknown_tool", "Tool not found")
-            schema, description = TOOLS[args.name]
-            return {
-                "name": args.name,
-                "description": description,
-                "input_schema": schema.model_json_schema(),
-            }
-        if name == "model_get":
-            self.bindings.require({"model.read": 1})
-            return self.assets.guard_model(
-                args.reference, self.resource_versions(task_id)
-            ).model_dump()
-        if name == "resources_list":
-            return {
-                "resources": self.adapter.describe(),
-                "model_ref": (self.resource_versions(task_id) or self.assets.selected)["model"],
-            }
-        if name == "resource_connect":
-            return await self.adapter.connect(args.resource_id)
-        if name == "robot_state":
-            self.bindings.require({"robot.state": 1})
-            if args.resource_id != self.bindings.robot.model.resource_id:
-                raise HarnessError("resource_mismatch", "State port belongs to another resource")
-            state = RobotState.model_validate(await self.bindings.robot.state())
-            if args.resource_id != state.resource_id:
-                raise HarnessError("resource_mismatch", "State belongs to another resource")
-            validate_state(self.bindings.robot.model, state)
-            self.store.put("robot_state", state.id, state.model_dump())
-            return state.model_dump()
-        if name == "calibration_get":
-            self.bindings.require({"calibration.read": 1})
-            return self.assets.get(args, self.resource_versions(task_id))
-        if name in ("kinematics_fk", "kinematics_ik"):
-            capability = "kinematics.fk" if name.endswith("fk") else "kinematics.ik"
-            self.bindings.require({capability: 1})
-            model = self.assets.guard_model(args.model_ref, self.resource_versions(task_id))
-            model.validate_joints(args.arm, args.joints if name.endswith("fk") else args.seed)
-            if name.endswith("fk"):
-                if args.base_frame not in model.frames or args.target_frame not in model.frames:
-                    raise HarnessError("unsupported_frame", "Use model frame IDs")
-                result = FKResult.model_validate(await self.bindings.kinematics.fk(args))
-                if (
-                    result.model_ref != args.model_ref
-                    or result.pose.target_frame != args.base_frame
-                    or result.pose.source_frame != args.target_frame
-                ):
-                    raise HarnessError("invalid_kinematics", "FK returned mismatched model/frames")
-            else:
-                if (
-                    args.target.target_frame not in model.frames
-                    or args.target.source_frame not in model.frames
-                ):
-                    raise HarnessError("unsupported_frame", "Use model frame IDs")
-                for joint, limits in args.joint_constraints.items():
-                    if joint not in args.seed or limits[0] > limits[1]:
-                        raise HarnessError("joint_mapping", "Invalid IK joint constraint")
-                result = IKResult.model_validate(await self.bindings.kinematics.ik(args))
-                if result.model_ref != args.model_ref:
-                    raise HarnessError("invalid_kinematics", "IK returned another model")
-                if result.status == "solved":
-                    model.validate_joints(args.arm, result.joints)
-                    if any(
-                        not lo <= result.joints[j] <= hi
-                        for j, (lo, hi) in args.joint_constraints.items()
-                    ):
-                        raise HarnessError(
-                            "invalid_kinematics", "IK violated requested constraints"
-                        )
-            return result.model_dump()
-        if name == "robot_command":
-            self.bindings.require({"robot.command": 1})
-            if prior := self.operations.existing(name, args):
-                return prior
-            state = RobotState.model_validate(self.store.get("robot_state", args.observation_id))
-            validate_command(self.bindings.robot.model, args, state)
-
-            async def execute_command(identity):
-                receipt = CommandReceipt.model_validate(
-                    await self.bindings.robot.submit(args, identity)
-                )
-                if (
-                    receipt.operation_id != identity
-                    or receipt.request_id != args.request_id
-                    or receipt.resource_id != args.resource_id
-                    or receipt.boot_id != state.boot_id
-                    or receipt.epoch != state.epoch
-                ):
-                    raise HarnessError(
-                        "verification_unknown", "Command acknowledgement has wrong ownership"
-                    )
-                self.store.put("command", receipt.command_id, receipt.model_dump())
-                self.operations.stage(identity, "submitted", receipt.model_dump())
-                feedback = CommandFeedback.model_validate(await self.bindings.robot.wait(receipt))
-                if (
-                    feedback.command_id != receipt.command_id
-                    or feedback.operation_id != identity
-                    or feedback.status == "unknown"
-                ):
-                    raise HarnessError("verification_unknown", "Command effect is unknown")
-                if feedback.status != "completed":
-                    raise HarnessError("command_failed", feedback.reason or "Command failed")
-                validate_state(self.bindings.robot.model, feedback.state)
-                if (
-                    feedback.state.boot_id != receipt.boot_id
-                    or feedback.state.epoch != receipt.epoch
-                ):
-                    raise HarnessError(
-                        "verification_unknown", "Feedback belongs to another owner epoch/boot"
-                    )
-                self.robot.validate_observation(feedback.state.model_dump())
-                confirm_command(self.bindings.robot.model, args, feedback.state)
-                self.store.put("robot_state", feedback.state.id, feedback.state.model_dump())
-                return {
-                    "receipt": receipt.model_dump(),
-                    "feedback": feedback.model_dump(),
-                    "verified": False,
-                    "qualification": feedback.qualification,
-                    "meaning": "measured device command completion; not whole-goal or grasp verification",
-                }
-
-            return self.operations.submit(
-                name,
-                args,
-                execute_command,
-                observation=state.model_dump(),
-                capabilities=self._capabilities,
-            )
-        if name == "robot_observe":
-            return await self.observe(args.camera)
-        if name in MOTION_TOOLS:
-            if name in ("robot_move", "robot_gripper") and not callable(
-                getattr(self.robot, "move" if name == "robot_move" else "gripper", None)
-            ):
-                raise HarnessError("unsupported", "Use the declared named device command port")
-            if prior := self.operations.existing(name, args):
-                return prior
-            if name == "skill_pick_place":
-                self.validate_pick_place(args)
-            if name == "robot_move" and args.frame_id not in self.robot.frames:
-                raise HarnessError("unsupported_frame", "Frame is not bound on this station")
-            observation = self.store.get("observation", args.observation_id)
-
-            async def run(identity):
-                if name == "skill_pick_place":
-                    return await pick_place(self.skill_context(identity), args)
-                if name == "robot_move":
-                    await self.robot.move(args.arm, args.position_m)
-                else:
-                    await self.robot.gripper(args.arm, args.opening)
-                self.operations.stage(identity, "executed")
-                return {
-                    "qualification": getattr(self.robot, "qualification", "no_robot"),
-                    "observation_id": (await self.observe())["id"],
-                }
-
-            is_skill = name == "skill_pick_place"
-            return self.operations.submit(
-                name,
-                args,
-                run,
-                observation=observation,
-                skill_name="pick_place" if is_skill else None,
-                skill_version=PICK_PLACE_VERSION if is_skill else None,
-                capabilities=self.bindings.catalog() if is_skill else [],
-            )
-        if name == "robot_hold":
-            stopped = await self.operations.hold()
-            if stopped.get("confirmed"):
-                for op in self.store.all("operation"):
-                    if "manipulator" in operation_resources(op) and (
-                        request := op.get("args", {}).get("request_id")
-                    ):
-                        self.registry.release("operation:" + request)
-            return stopped
-        if name == "operation_get":
-            return await self.operations.get(args.operation_id, args.wait_s)
-        if name == "operation_cancel":
-            operation = self.store.get("operation", args.operation_id)
-            if operation.get("task_id"):
-                self.task_memory.cancel(operation["task_id"])
-                self.registry.release(operation["task_id"])
-            return await self.operations.cancel(args.operation_id)
-        if name == "skills_list":
-            return self.registry.cards(args, bindings=self.bindings)
-        if name == "skill_describe":
-            return (
-                self.select_skill(task_id, args.name)
-                if task_id
-                else self.registry.resolve(args.name, bindings=self.bindings)
-            )
-        if name == "artifact_info":
-            return self.store.get("artifact", args.artifact_id)
-        if name == "depth_estimate":
-            self.bindings.require({"depth.estimate": 1})
-            return await self.depth.estimate(args.observation_id, args.max_depth_m)
-        if name == "depth_point":
-            self.bindings.require({"depth.estimate": 1})
-            return self.depth.point(args.depth_id, args.u, args.v, args.radius, args.stream_id)
-        if name == "memory_recall":
-            return self.recall_memory(args, task_id)
-        if name == "memory_remember":
-            return self.memory.remember(args)
-        raise HarnessError("unknown_tool", "Tool not found")
+        return await self._tool_handlers[name](name, args, task_id=task_id)
 
     async def _run_skill(self, args, *, tool="task_run", recovery_of=None, dedup_args=None):
-        if prior := self.operations.existing(tool, dedup_args or args):
-            return prior
-        task = None
-        if args.task_id:
-            task = self.task_memory.admit(
-                args.task_id,
-                args.task_epoch,
-                recovery_of=recovery_of,
-                after_operation_id=args.after_operation_id,
-            )
-            selected = self.select_skill(args.task_id, args.skill)
-        else:
-            if args.after_operation_id:
-                raise HarnessError("task_not_started", "Continuation must belong to a managed task")
-            selected = self.registry.resolve(args.skill, bindings=self.bindings)
-        model, output_model, entry = self.registry.load(args.skill, selected["version"], bindings=self.bindings)
-        parameters = model.model_validate(args.parameters)
-        if selected["kind"] != "code":
-            # Instruction preparation is explicitly not an operation or a success claim.
-            return {
-                "prepared": True,
-                "completed": False,
-                "task_id": args.task_id,
-                "skill": selected,
-            }
-        self.bindings.require(selected["requires"])
-        if validate := getattr(parameters, "validate_context", None):
-            validate(self.skill_context(None))
-        temporary_pin = "operation:" + args.request_id
-        self.registry.pin(
-            temporary_pin, args.skill, selected["version"], inherited_task=args.task_id
-        )
-        try:
-            observation = None
-            if "manipulator" in selected["resources"]:
-                if selected["requires"].get("scene.observe") != 1:
-                    self.bindings.require({"scene.observe": 1})
-                reference = await self.bindings.scene.observe()
-                observation = self.store.get("observation", reference.id)
-            if task:
-                task = self.task_memory.admit(
-                    args.task_id,
-                    args.task_epoch,
-                    recovery_of=recovery_of,
-                    after_operation_id=args.after_operation_id,
-                )
-
-            async def run(identity):
-                result = await entry(self.skill_context(identity), parameters)
-                return output_model.model_validate(result).model_dump()
-
-            operation = self.operations.submit(
-                tool,
-                args,
-                run,
-                observation=observation,
-                resources=selected["resources"],
-                skill_name=args.skill,
-                skill_version=selected["version"],
-                capabilities=self.bindings.catalog(),
-                deadline_at=task["execution"]["deadline_at"] if task else None,
-                recovery_of=recovery_of,
-                dedup_args=dedup_args,
-            )
-            if task:
-                self.task_memory.attach(args.task_id, operation, recovery_of=recovery_of)
-            return operation
-        except BaseException:
-            self.registry.release(temporary_pin)
-            raise
+        return await self.execution._run_skill(args, tool=tool, recovery_of=recovery_of, dedup_args=dedup_args)

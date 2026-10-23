@@ -127,7 +127,7 @@ def main():
     initialize.add_argument("--source", help="只读旧来源目录")
     initialize.add_argument("--no-sync", action="store_true", help="只生成文件，安装由显式 uv 命令接续")
     guidance = sub.add_parser("guide", help="读取当前安装的同源 Agent 引导或中文公共指南")
-    guidance.add_argument("section", choices=["agent", "base", "onboarding", "project", "integration", "interfaces"])
+    guidance.add_argument("section", choices=["agent", "base", "onboarding", "project", "integration", "interfaces", "skill-authoring"])
     project = sub.add_parser("project", help="Host purpose entry over an existing project and role")
     project.add_argument("--purpose", choices=["onboarding", "run", "improve", "evaluate"])
     project.add_argument("--key")
@@ -220,7 +220,9 @@ def main():
     update.add_argument("--directory", required=True)
     update.add_argument("--wheel", action="append", required=True)
     evidence = sub.add_parser("evidence", help="Host-only scoped task/evidence export")
-    evidence.add_argument("--task-id", required=True)
+    evidence.add_argument("--task-id", action="append", required=True)
+    evidence.add_argument("--method", help="Export registration and actual runs of this code skill")
+    evidence.add_argument("--version", help="Optional fixed method version")
     evidence.add_argument("--output", required=True)
     skill = sub.add_parser("skill", help="Host-only skill package management; no hardware access")
     management = skill.add_subparsers(dest="action", required=True)
@@ -341,10 +343,15 @@ def main():
             registry = None
             try:
                 if args.command == "evidence":
-                    from .evidence import export_task
+                    from .evidence import export_task, export_method
 
                     registry = Registry(profile)
-                    result = export_task(store, registry, args.task_id)
+                    if args.method:
+                        result = export_method(store, registry, args.method, args.task_id, version=args.version)
+                    elif len(args.task_id) == 1 and args.version is None:
+                        result = export_task(store, registry, args.task_id[0])
+                    else:
+                        raise ValueError("Multiple tasks/version require --method")
                     Path(args.output).write_text(
                         json.dumps(result, ensure_ascii=False, indent=2) + "\n"
                     )

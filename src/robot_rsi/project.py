@@ -1,5 +1,6 @@
 """Host-selected project materials; purpose narrows existing scope, never grants a role."""
 from __future__ import annotations
+from .feature_contracts import ProjectRead, ProjectFiles
 
 import hashlib
 from pathlib import Path
@@ -13,16 +14,8 @@ PURPOSE_ROLES = {"onboarding": "development", "improve": "development",
                  "run": "runtime", "evaluate": "evaluation"}
 
 
-class ProjectRead(Contract):
-    key: Identifier | None = None
-    query: str = Field(default="", max_length=200)
-    limit: int = Field(default=3, ge=1, le=3)
 
 
-class ProjectFiles(Contract):
-    path: str = Field(default=".", min_length=1, max_length=240)
-    offset: int = Field(default=0, ge=0)
-    limit: int = Field(default=6000, ge=1, le=16000)
 
 
 EXCLUDED = {".git", ".codex", ".rsi", ".venv", "venv", "node_modules", "__pycache__", ".ssh", ".env", "auth.json"}

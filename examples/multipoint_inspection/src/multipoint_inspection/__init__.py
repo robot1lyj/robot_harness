@@ -9,7 +9,7 @@ from pydantic import Field, model_validator
 from robot_rsi.contracts import Contract, HarnessError, Identifier, Finite, VersionRef
 from robot_rsi.device_validation import confirm_command, validate_state, validate_command
 from robot_rsi.resources import RobotCommand, Waypoint
-from robot_rsi.storage import uid
+from robot_rsi.authoring import artifact, criterion, result, request_id
 
 
 def packages():
@@ -77,7 +77,7 @@ async def run(context, args):
         progress = {"confirmed": [r["point"] for r in results], "remaining": remaining}
         context.stage("moving", progress)
         state = await robot.state()
-        command = RobotCommand(request_id=uid("inspect"), resource_id=args.resource_id,
+        command = RobotCommand(request_id=request_id("inspect"), resource_id=args.resource_id,
             model_ref=args.model_ref, arm=args.arm, observation_id=state.id,
             trajectory=[Waypoint(time_from_start_s=0.001, positions=point.joints)])
         validate_command(robot.model, command, state)
@@ -121,11 +121,9 @@ async def run(context, args):
         "order": [p.id for p in ordered], "points": results,
         "normality": normal, "moves": moves, "samples": samples,
         "remaining": [], "last_confirmed": results[-1]["point"]}
-    identity = context.artifacts.write(json.dumps(report).encode(), "application/json", {"kind": "inspection_report"})
-    ref = [{"kind": "artifact", "id": identity}]
-    return {"completed": True, "verified": True, "qualification": report["qualification"],
-        "report_id": identity, "moves": moves, "samples": samples,
-        "criterion_results": [
-            {"criterion_id": "report", "status": "passed", "source": report["source"], "evidence_refs": ref, "remaining": []},
-            {"criterion_id": "normal", "status": normal, "source": report["source"], "evidence_refs": ref,
-             "remaining": [] if normal == "passed" else ["Resolve anomalous or unreadable observations before confirming normality"]}]}
+    ref = artifact(context, json.dumps(report).encode(), mime="application/json", metadata={"kind": "inspection_report"})
+    return result(completed=True, verified=True, qualification=report["qualification"],
+        report_id=ref.id, moves=moves, samples=samples, criteria=[
+            criterion("report", "passed", source=report["source"], evidence=[ref]),
+            criterion("normal", normal, source=report["source"], evidence=[ref],
+                remaining=[] if normal == "passed" else ["Resolve anomalous or unreadable observations before confirming normality"])])

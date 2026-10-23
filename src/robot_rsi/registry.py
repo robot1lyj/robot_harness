@@ -174,8 +174,8 @@ class Registry:
         for model in (input_model, output_model):
             if not isinstance(model, type) or not issubclass(model, BaseModel):
                 raise HarnessError("invalid_skill", "Contract reference must be a Pydantic model")
-        entry = symbol(manifest.entry, directory, digest) if manifest.kind == "code" else None
-        if manifest.kind == "code" and not inspect.iscoroutinefunction(entry):
+        entry = symbol(manifest.entry, directory, digest) if manifest.kind == "code" and not builtin else None
+        if manifest.kind == "code" and not builtin and not inspect.iscoroutinefunction(entry):
             raise HarnessError("invalid_skill", "Code entry must be an async function")
         if manifest.kind == "agent_workflow":
             from .tool_specs import TOOLS

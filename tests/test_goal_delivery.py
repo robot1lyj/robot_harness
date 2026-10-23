@@ -23,7 +23,7 @@ def contract(goal="巡检全部输入点并确认正常", args=None, kind="one_o
     return {"original_goal": goal, "kind": kind, "criteria": [
         {"id": "report", "description": "Visit all input points and report image observations", "required": True},
         {"id": "normal", "description": "Every point is normal by image evidence", "required": args.get("mode", "confirm_normal") == "confirm_normal"}],
-        "entry": {"skill": "multipoint_inspection", "version": "0.1.0", "parameters": args}, "remaining": []}
+        "entry": {"skill": "multipoint_inspection", "version": "0.1.1", "parameters": args}, "remaining": []}
 
 
 def configured(profile, **options):
@@ -38,7 +38,7 @@ async def call(runtime, tool, **args):
 
 async def prepare(runtime, task="inspection", args=None, declaration=True):
     runtime.registry.discover()
-    runtime.registry.enable("multipoint_inspection", "0.1.0")
+    runtime.registry.enable("multipoint_inspection", "0.1.1")
     await call(runtime, "resource_connect", resource_id="bench")
     goal = "巡检全部输入点并生成报告" if (args or {}).get("mode") == "report" else "巡检全部输入点并确认正常"
     kwargs = {"delivery": contract(goal=goal, args=args)} if declaration else {}

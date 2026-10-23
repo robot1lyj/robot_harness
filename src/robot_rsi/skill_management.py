@@ -8,8 +8,7 @@ from .registry import Manifest
 
 CODE = """import asyncio
 from pydantic import Field
-from robot_rsi.contracts import Contract
-from robot_rsi.skill_models import SkillResult
+from robot_rsi.authoring import Contract, SkillResult, result
 
 class Parameters(Contract):
     message: str = Field(default="fixture", max_length=200)
@@ -19,8 +18,8 @@ async def run(context, args):
     context.stage("fixture_wait", None)
     await asyncio.sleep(args.delay_s)
     observation = await context.bindings.scene.observe()
-    return {"message": args.message, "observation_id": observation.id,
-            "qualification": "fixture_only"}
+    return result(completed=True, verified=False, qualification="fixture_only",
+                  message=args.message, observation_id=observation.id)
 """
 
 

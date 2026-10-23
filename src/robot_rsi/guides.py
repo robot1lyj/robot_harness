@@ -1,3 +1,4 @@
+from .feature_contracts import HarnessRead
 """Read two installed public guides; the canonical bodies remain in docs/."""
 
 import hashlib
@@ -11,10 +12,6 @@ from pydantic import Field
 from .contracts import Contract, HarnessError
 
 
-class HarnessRead(Contract):
-    guide: Literal["integration", "interfaces"] = "integration"
-    offset: int = Field(default=0, ge=0)
-    limit: int = Field(default=6000, ge=1, le=16000)
 
 
 def read_guide(args, installation_digest):

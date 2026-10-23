@@ -257,13 +257,13 @@ def commit_paths(project, paths, text):
     return host.git(project, "rev-parse", "HEAD").strip()
 
 
-def test_same_delivery_retains_checked_scope_after_another_missing_item(tmp_path):
+def test_empty_narrative_retains_checked_scope_without_repair(tmp_path):
     project = repository(tmp_path / "repo")
     rec = {**record(project), "id": "delivery-one", "session_id": str(uuid.uuid4())}
     first = commit_paths(project, ["mean.py", "reports/boundaries.json"], "first scope\n")
     missing, _ = host.inspect_handoff(project, rec, handoff(
         paths=["mean.py", "reports/boundaries.json"], commits=[first], checkpoint=""))
-    assert any("checkpoint" in item for item in missing)
+    assert missing == [] and rec["handoff_notes"]
     assert rec["delivery_scope"]["paths"] == ["mean.py", "reports/boundaries.json"]
     second = commit_paths(project, ["mean.py", "verify.py"], "second scope\n")
     # A parallel file remains outside this delivery, including in the real index.
@@ -316,3 +316,102 @@ def test_explicit_no_commit_scope_continues_without_creating_commits(tmp_path):
     assert host.inspect_handoff(project, rec, latest, no_commit=True)[0] == []
     assert latest.paths == ["mean.py", "verify.py"] and latest.commits == []
     assert host.git(project, "rev-parse", "HEAD").strip() == initial
+
+
+def test_existing_commit_and_missing_narrative_complete_without_model_repair(tmp_path, monkeypatch):
+    project = repository(tmp_path / 'repo')
+    calls = []
+    session = str(uuid.uuid4())
+    def boundary(*args, **kwargs):
+        (project / '.rsi/host-home').mkdir(parents=True, exist_ok=True)
+        return []
+    monkeypatch.setattr(host, 'command', boundary)
+    def client(_root, _project, _options, prompt, _schema, rec, **kwargs):
+        calls.append(kwargs['session'])
+        rec['session_id'] = session
+        rec['turns'].append({'session_id':session})
+        commit_paths(project, ['mean.py'], 'fixed source\n')
+        rec['commands'].append({'id':'check','command':'python check.py','exit_code':0})
+        return handoff(summary='', checkpoint='', commits=[]).model_dump_json(), False, 0
+    monkeypatch.setattr(host, 'run_client', client)
+    assert host.run(tmp_path, project, ['fix']) == 0
+    assert calls == [None]
+    saved = host.prior_record(host.selected_profile(project), session)
+    assert saved['handoff']['commits'] == [host.git(project, 'rev-parse', 'HEAD').strip()]
+    import json
+    assert json.loads(saved['handoff']['checkpoint'])['sources']['commits'] == saved['handoff']['commits']
+    assert saved['handoff_notes']
+
+
+def test_previously_checked_validation_is_reused_but_new_missing_validation_is_not_invented(tmp_path):
+    project=repository(tmp_path/'repo')
+    rec={**record(project),'id':'scope','session_id':str(uuid.uuid4())}
+    sha=commit_paths(project,['mean.py'],'fixed\n')
+    report=handoff(commits=[sha])
+    missing, checked=host.inspect_handoff(project,rec,report)
+    assert not missing
+    rec['validation_basis']=checked
+    report=handoff(paths=[],commits=[],validation=[],checkpoint='')
+    assert not host.inspect_handoff(project,rec,report)[0]
+    other={**record(project),'commands':[]}
+    report=handoff(validation=[],commits=[sha])
+    assert any('validation' in gap for gap in host.inspect_handoff(project,other,report)[0])
+
+
+def test_json_fence_and_narrative_shape_do_not_change_substantive_handoff():
+    rec={}
+    result=host.read_handoff('```json\n{"paths":[],"summary":null,"checkpoint":42}\n```',rec)
+    assert result.paths == [] and result.kind == 'development'
+    assert len(rec['handoff_notes']) == 2
+    with pytest.raises(ValueError):
+        host.read_handoff('{"delivery":{"original_goal":"missing real criteria"}}',{})
+
+
+def test_no_source_change_completes_in_one_client_turn_without_empty_commit(tmp_path, monkeypatch):
+    project=repository(tmp_path/'repo')
+    head=host.git(project,'rev-parse','HEAD')
+    turns=[]
+    def boundary(*args,**kwargs):
+        (project/'.rsi/host-home').mkdir(parents=True,exist_ok=True)
+        return []
+    def client(_root,_project,_options,_prompt,_schema,rec,**kwargs):
+        turns.append(kwargs['session'])
+        rec['session_id']=str(uuid.uuid4())
+        rec['turns'].append({'session_id':rec['session_id']})
+        return host.Handoff().model_dump_json(),False,0
+    monkeypatch.setattr(host,'command',boundary)
+    monkeypatch.setattr(host,'run_client',client)
+    assert host.run(tmp_path,project,['Inspect existing source; no change is necessary'])==0
+    assert turns==[None] and host.git(project,'rev-parse','HEAD')==head
+
+
+def test_later_omitted_sha_is_derived_inside_previously_checked_scope(tmp_path):
+    project=repository(tmp_path/'repo')
+    rec={**record(project),'id':'delivery','session_id':str(uuid.uuid4())}
+    first=commit_paths(project,['mean.py'],'first source\n')
+    missing,checked=host.inspect_handoff(project,rec,handoff(commits=[first]))
+    assert not missing
+    rec['validation_basis']=checked
+    second=commit_paths(project,['verify.py'],'second source\n')
+    report=handoff(paths=['verify.py'],commits=[],checkpoint='')
+    assert not host.inspect_handoff(project,rec,report)[0]
+    assert report.paths==['mean.py','verify.py'] and report.commits==[first,second]
+
+
+def test_changed_source_does_not_borrow_previous_validation_while_parallel_changes_are_allowed(tmp_path):
+    project=repository(tmp_path/'repo')
+    rec={**record(project),'id':'delivery','session_id':str(uuid.uuid4())}
+    first=commit_paths(project,['mean.py'],'first source\n')
+    missing,checked=host.inspect_handoff(project,rec,handoff(commits=[first]))
+    assert not missing
+    rec['validation_basis']=checked
+    # Unrelated live edits do not invalidate the checked source's validation.
+    (project/'parallel.py').write_text('owned elsewhere\n')
+    assert not host.inspect_handoff(project,rec,handoff(commits=[],validation=[]))[0]
+    second=commit_paths(project,['mean.py'],'changed source\n')
+    missing,_=host.inspect_handoff(project,rec,handoff(commits=[],validation=[]))
+    assert any('validation' in gap for gap in missing)
+    # A declared applicable existing check may be selected without rerunning it.
+    report=handoff(commits=[])
+    assert not host.inspect_handoff(project,rec,report)[0]
+    assert report.commits==[first,second]

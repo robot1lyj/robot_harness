@@ -11,7 +11,7 @@ def delivery(goal, parameters, kind="one_off"):
     return {"original_goal": goal, "kind": kind, "criteria": [
         {"id": "report", "description": "Visit every point and produce sourced image results", "required": True},
         {"id": "normal", "description": "All point images confirm normality", "required": parameters.get("mode", "confirm_normal") == "confirm_normal"}],
-        "entry": {"skill": "multipoint_inspection", "version": "0.1.0", "parameters": parameters}, "remaining": []}
+        "entry": {"skill": "multipoint_inspection", "version": "0.1.1", "parameters": parameters}, "remaining": []}
 
 
 async def exercise(profile, task_id, parameters, goal="巡检全部输入点并确认正常"):
@@ -22,7 +22,7 @@ async def exercise(profile, task_id, parameters, goal="巡检全部输入点并�
                 raise RuntimeError(response)
             return response["result"]
         runtime.registry.discover()
-        runtime.registry.enable("multipoint_inspection", "0.1.0")
+        runtime.registry.enable("multipoint_inspection", "0.1.1")
         registration = await call("skill_describe", name="multipoint_inspection")
         await call("resource_connect", resource_id=parameters["resource_id"])
         await call("task_begin", task_id=task_id, goal=goal, delivery=delivery(goal, parameters))

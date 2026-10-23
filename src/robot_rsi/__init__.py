@@ -1,3 +1,3 @@
 """Robot RSI Harness. Importing this package never connects to hardware."""
 
-__version__ = "0.4.0"
+__version__ = "0.4.1"

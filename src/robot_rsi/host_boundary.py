@@ -80,12 +80,21 @@ def protection():
     if not baseline:
         return {"protected": False, "reason": "not launched by the controlled host entry"}
     try:
-        root = Path(sys.prefix).resolve().parent
-        if Path(baseline).resolve(strict=True) != root / "approved.json":
+        root = Path(baseline).resolve(strict=True).parent
+        prefix = Path(sys.prefix).resolve(strict=True)
+        installed = root / "env"
+        module = Path(__file__).resolve(strict=True)
+        # A bind-mounted project/.venv retains a different pathname, but the same
+        # installation inode. Also prove this module belongs to that environment;
+        # an ambient editable checkout must never inherit a baseline claim.
+        if not prefix.samefile(installed) or not any(module.is_relative_to(base) for base in (prefix, installed)):
             return {"protected": False, "reason": "baseline does not belong to this selected installation"}
+        relative = module.relative_to(prefix if module.is_relative_to(prefix) else installed)
+        if not module.samefile(installed / relative):
+            return {"protected": False, "reason": "module does not belong to selected installation"}
         data = load(root)
-        protected = (Path(__file__).resolve().is_relative_to(root / "env")
-                     and mount_readonly(root) and mount_readonly(sys.prefix))
+        protected = (mount_readonly(root) and mount_readonly(installed)
+                     and mount_readonly(prefix) and mount_readonly(module))
         return {"protected": protected, "baseline": str(root / "approved.json"),
                 "core": data["core"], "installation": data["installation"]["digest"],
                 "scope": "this controlled process and descendants; excludes host/desktop",

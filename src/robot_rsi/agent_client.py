@@ -12,17 +12,7 @@ from pathlib import Path
 from .contracts import HarnessError
 from .storage import canonical
 
-AGENT_TOOLS = [
-    "task_context", "task_checkpoint_get", "task_run", "task_recover", "task_cancel",
-    "task_archive", "task_finish", "operation_get", "operation_cancel", "robot_observe",
-    "workspace_read", "workspace_note", "skills_list", "skill_describe", "memory_recall",
-    "project_read", "project_files", "issue_create", "issue_get",
-    "harness_read", "tool_describe", "tools_list", "capabilities_list", "resources_list",
-    "resource_connect", "robot_state",
-    "assistance_get",
-    "binding_candidates", "binding_read", "binding_validate", "binding_save",
-    "camera_describe", "camera_capture", "kinematics_fk", "kinematics_ik", "model_get", "calibration_get",
-]
+from .tool_catalog import AGENT_TOOLS
 
 
 class CodexClient:
