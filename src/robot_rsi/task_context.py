@@ -28,6 +28,7 @@ def block_view(runtime, args, context):
         "task": {
             "task_id": args.task_id,
             "goal": checkpoint["goal"],
+            **({"delivery": checkpoint["delivery"]} if checkpoint.get("delivery") else {}),
             "constraints": checkpoint["constraints"],
             "skill_versions": checkpoint["skill_versions"],
             "resource_versions": checkpoint.get("resource_versions", {}),
@@ -40,7 +41,7 @@ def block_view(runtime, args, context):
         "experiences": context["memories"],
         "results": {
             **{key: value for key, value in checkpoint.items()
-               if key not in ("goal", "constraints", "skill_versions", "execution",
+               if key not in ("goal", "delivery", "constraints", "skill_versions", "execution",
                               "remaining_budget", "memory", "updated_at", "resource_versions")},
             "allowed_recovery": context["allowed_recovery"],
         },

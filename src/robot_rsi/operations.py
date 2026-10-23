@@ -51,6 +51,7 @@ class Operations:
     def stage(self, identity: str, name: str, data: dict | None = None):
         record = self.store.get("operation", identity)
         record["stage"] = name
+        record["stage_data"] = data or {}
         self.store.put("operation", identity, record)
         self.on_stage(record)
         self.store.event(
@@ -195,6 +196,7 @@ class Operations:
                 hold=stopped,
                 ended_at=time.time(),
                 stage=self.store.get("operation", identity)["stage"],
+                stage_data=self.store.get("operation", identity).get("stage_data", {}),
             )
             self.store.put("operation", identity, record)
             self.on_finished(record)

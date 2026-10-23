@@ -1,7 +1,7 @@
 # 机器人使用项目
 
 用户叫法按目标和交付要求理解，普通任务复用现有方法。宿主如提供受控入口，使用其固定底座，
-在本地扩展/技能目录改进并构建候选，由宿主保留式安装；不修改已装core或基础提示。
+在本地扩展/技能目录改进并构建候选，由当地宿主程序自动保留式安装并在同一session接续；不修改已装core或基础提示。
 保护范围以实际入口/挂载事实为准，AGENTS与锁文件不构成权限边界。说明见 `robot-rsi guide project`。
 
 当前目录保存本地能力实现、任务技能、配置、资产和新任务记录。框架是固定的
@@ -14,15 +14,15 @@
 | 位置 | 用途 |
 |---|---|
 | extensions/、skills/ | 本地可安装实现与代码技能 |
-| profiles/development.json | 来源分析与开发身份 |
+| profiles/development.json | 来源分析与局部改进资料范围 |
 | profiles/runtime.json | 实际资源装配与日常任务 |
 | assets/ | 固定模型、标定及所需数据 |
-| .rsi/state/ | 本项目新状态，按原角色/工作区隔离 |
+| .rsi/state/ | 本项目新状态，按原Store范围/工作区隔离 |
 | pyproject.toml、uv.lock、.venv/ | 本项目的依赖与运行环境 |
 
 初始化没有配置机器人/相机，也不证明设备就绪。实现后用实际目录确认：
 默认 CLI 读取当前项目 tool.robot-rsi.profile，无需每次加 --profile；显式配置和原环境选择优先。
-从子目录调用仍按声明所在根解析，声明损坏会报错。开发身份请显式选择 development Profile。
+从子目录调用仍按声明所在根解析，声明损坏会报错。需要局部改进资料时，同一个Agent显式选择宿主已有的development Profile；这不改变身份或工具授权。
 
 ```bash
 uv run --no-sync robot-rsi call capabilities_list

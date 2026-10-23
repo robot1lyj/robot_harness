@@ -245,3 +245,74 @@ def test_one_session_feedback_is_bounded_and_status_read_does_not_run_model(tmp_
     other = repository(tmp_path / "other")
     with pytest.raises(ValueError, match="selected development scope"):
         host.prior_record(host.selected_profile(other), session)
+
+
+def commit_paths(project, paths, text):
+    for name in paths:
+        target = project / name
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(text)
+    host.git(project, "add", "--", *paths)
+    host.git(project, "commit", "--only", "-m", text.strip(), "--", *paths)
+    return host.git(project, "rev-parse", "HEAD").strip()
+
+
+def test_same_delivery_retains_checked_scope_after_another_missing_item(tmp_path):
+    project = repository(tmp_path / "repo")
+    rec = {**record(project), "id": "delivery-one", "session_id": str(uuid.uuid4())}
+    first = commit_paths(project, ["mean.py", "reports/boundaries.json"], "first scope\n")
+    missing, _ = host.inspect_handoff(project, rec, handoff(
+        paths=["mean.py", "reports/boundaries.json"], commits=[first], checkpoint=""))
+    assert any("checkpoint" in item for item in missing)
+    assert rec["delivery_scope"]["paths"] == ["mean.py", "reports/boundaries.json"]
+    second = commit_paths(project, ["mean.py", "verify.py"], "second scope\n")
+    # A parallel file remains outside this delivery, including in the real index.
+    (project / "parallel.py").write_text("another actor\n")
+    host.git(project, "add", "--", "parallel.py")
+    index = host.git(project, "ls-files", "--stage", "--", "parallel.py")
+    latest = handoff(paths=["mean.py", "verify.py"], commits=[second])
+    assert host.inspect_handoff(project, rec, latest)[0] == []
+    assert latest.paths == ["mean.py", "reports/boundaries.json", "verify.py"]
+    assert latest.commits == [first, second]
+    assert "parallel.py" not in rec["delivery_scope"]["paths"]
+    assert host.git(project, "ls-files", "--stage", "--", "parallel.py") == index
+
+
+def test_unverified_commits_and_other_sessions_do_not_seed_scope(tmp_path):
+    project = repository(tmp_path / "repo")
+    rec = {**record(project), "id": "delivery-one", "session_id": str(uuid.uuid4())}
+    first = commit_paths(project, ["mean.py", "undeclared.py"], "not fully declared\n")
+    assert host.inspect_handoff(project, rec, handoff(commits=[first]))[0]
+    assert "delivery_scope" not in rec
+    assert host.inspect_handoff(project, rec, handoff(paths=["mean.py", "undeclared.py"], commits=[first]))[0] == []
+    previous = rec["delivery_scope"]
+    second = commit_paths(project, ["verify.py"], "new session source\n")
+    other = {**rec, "session_id": str(uuid.uuid4()), "delivery_scope": previous}
+    latest = handoff(paths=["verify.py"], commits=[second])
+    assert host.inspect_handoff(project, other, latest)[0] == []
+    assert latest.paths == ["verify.py"] and latest.commits == [second]
+
+
+def test_checked_scope_does_not_adopt_an_undeclared_commit_path(tmp_path):
+    project = repository(tmp_path / "repo")
+    rec = {**record(project), "id": "delivery-one", "session_id": str(uuid.uuid4())}
+    first = commit_paths(project, ["mean.py"], "first declared\n")
+    assert host.inspect_handoff(project, rec, handoff(commits=[first]))[0] == []
+    second = commit_paths(project, ["verify.py", "unclaimed.txt"], "mixed later commit\n")
+    missing, _ = host.inspect_handoff(project, rec, handoff(paths=["verify.py"], commits=[second]))
+    assert any("unclaimed.txt" in item for item in missing)
+    assert rec["delivery_scope"]["paths"] == ["mean.py"]
+    assert rec["delivery_scope"]["commits"] == [first]
+
+
+def test_explicit_no_commit_scope_continues_without_creating_commits(tmp_path):
+    project = repository(tmp_path / "repo")
+    rec = {**record(project), "id": "no-commit", "session_id": str(uuid.uuid4())}
+    initial = rec["start"]["head"]
+    (project / "mean.py").write_text("first changed\n")
+    assert host.inspect_handoff(project, rec, handoff(), no_commit=True)[0] == []
+    (project / "verify.py").write_text("second changed\n")
+    latest = handoff(paths=["verify.py"])
+    assert host.inspect_handoff(project, rec, latest, no_commit=True)[0] == []
+    assert latest.paths == ["mean.py", "verify.py"] and latest.commits == []
+    assert host.git(project, "rev-parse", "HEAD").strip() == initial

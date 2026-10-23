@@ -8,7 +8,7 @@
 不要把框架根 pyproject 当成使用项目，也不要用发布整树覆盖本地实现。
 
 ```bash
-robot-rsi init . --core-wheel /path/robot_rsi_harness-0.3.2-py3-none-any.whl --source /path/legacy
+robot-rsi init . --core-wheel /path/robot_rsi_harness-0.4.0-py3-none-any.whl --source /path/legacy
 uv run --no-sync robot-rsi guide agent
 ```
 

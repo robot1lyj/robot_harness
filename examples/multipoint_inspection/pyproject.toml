@@ -1,0 +1,12 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+[project]
+name = "robot-rsi-multipoint-inspection"
+version = "0.1.0"
+requires-python = ">=3.12,<3.14"
+dependencies = ["robot-rsi-harness==0.4.0"]
+[project.entry-points."robot_rsi.skills"]
+multipoint_inspection = "multipoint_inspection:packages"
+[tool.hatch.build.targets.wheel]
+packages = ["src/multipoint_inspection"]

@@ -65,8 +65,15 @@ async def test_task_context_growth_remains_bounded(profile, monkeypatch, size):
         body = canonical(context)
         assert [card["name"] for card in context["skill_candidates"]] == ["pick_place"]
         assert context["selected_skill"]["name"] == "pick_place"
-        assert len(context["memories"]) == 3
-        assert all("抓取相关经验" == memory["claim"] for memory in context["memories"])
+        memories = context["memories"]
+        if not memories:
+            # Whole optional records may leave a full context; the owner read must still work.
+            assert any(item["field"] == "memories" and item["read_with"] == "memory_recall" for item in context["omitted"])
+            read = await runtime.invoke("memory_recall", {"query": "抓取", "limit": 3}, task_id="growth")
+            assert read["ok"]
+            memories = read["result"]["records"]
+        assert len(memories) == 3
+        assert all("抓取相关经验" == memory["claim"] for memory in memories)
         assert "无关目录测试正文" not in body and "无关历史测试正文" not in body
         assert context["checkpoint"]["constraints"] == ["关键约束必须保留"]
         assert (

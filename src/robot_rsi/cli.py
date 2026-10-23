@@ -215,6 +215,7 @@ def main():
     prepare.add_argument("--uv")
     prepare.add_argument("--codex")
     update = actions.add_parser("update")
+    update.add_argument("--network", action="store_true", help="Allow compatible hashed dependency artifacts to be fetched; fixed base stays unchanged")
     update.add_argument("--baseline", required=True)
     update.add_argument("--directory", required=True)
     update.add_argument("--wheel", action="append", required=True)
@@ -271,7 +272,7 @@ def main():
                 output(prepare(args.directory, args.core_wheel, args.core_sha256, args.requirements,
                                wheels=args.wheel, uv=args.uv, codex=args.codex))
             else:
-                output(update(args.baseline, args.directory, args.wheel))
+                output(update(args.baseline, args.directory, args.wheel, allow_network=args.network))
             return
         if args.command in ("init", "guide"):
             from .project_setup import guide, initialize

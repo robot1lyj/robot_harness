@@ -271,7 +271,42 @@ class TaskEvidence(Contract):
     id: Identifier
 
 
+class GoalCriterion(Contract):
+    id: Identifier
+    description: str = Field(min_length=1, max_length=500)
+    required: bool = True
+
+
+class MethodEntry(Contract):
+    skill: Identifier
+    version: str = Field(min_length=1, max_length=80)
+    parameters: dict = Field(description="A valid callable input example, not a prior request/epoch")
+
+
+class GoalDelivery(Contract):
+    kind: Literal["one_off", "reusable_method"]
+    original_goal: str = Field(min_length=1, max_length=500)
+    criteria: list[GoalCriterion] = Field(min_length=1, max_length=32)
+    entry: MethodEntry | None = None
+    remaining: list[str] = Field(default_factory=list, max_length=32)
+
+    @model_validator(mode="after")
+    def distinct_criteria(self):
+        if len({c.id for c in self.criteria}) != len(self.criteria):
+            raise ValueError("Criterion IDs must be unique")
+        return self
+
+
+class CriterionResult(Contract):
+    criterion_id: Identifier
+    status: Literal["passed", "failed", "unknown"]
+    source: str = Field(min_length=1, max_length=500)
+    evidence_refs: list[TaskEvidence] = Field(default_factory=list, max_length=32)
+    remaining: list[str] = Field(default_factory=list, max_length=32)
+
+
 class TaskCheckpointSave(Contract):
+    delivery: GoalDelivery | None = None
     task_id: Identifier
     goal: str = Field(min_length=1, max_length=500)
     constraints: list[Annotated[str, Field(min_length=1, max_length=200)]] = Field(max_length=12)
@@ -290,6 +325,8 @@ class TaskIdentity(Contract):
 
 
 class TaskFinish(TaskIdentity):
+    criterion_results: list[CriterionResult] = Field(default_factory=list, max_length=32)
+    method_evidence: TaskEvidence | None = None
     task_epoch: int = Field(ge=0)
     outcome: Literal["succeeded", "failed", "cancelled", "unknown"]
     summary: str = Field(
@@ -307,6 +344,7 @@ class TaskCheckpointGet(TaskIdentity):
 
 
 class TaskBegin(TaskIdentity):
+    delivery: GoalDelivery | None = None
     goal: str = Field(min_length=1, max_length=500)
     recipe: Literal["pick_place_v1"] | None = None
     binding_ref: VersionRef | None = None

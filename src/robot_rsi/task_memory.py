@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import time
+import json
 
 from .contracts import (
     HarnessError,
@@ -11,6 +12,7 @@ from .contracts import (
     TaskCheckpointSave,
     TaskLimits,
 )
+from .delivery import preserve, check_results, check_method, operation_results
 from .operations import TERMINAL, operation_resources
 from .storage import Store, canonical
 from .task_snapshot import maintain, unique
@@ -45,6 +47,7 @@ class TaskMemory:
                     "tool": record.get("tool"),
                     "status": record["status"],
                     "stage": record.get("stage"),
+                    **({"stage_data": record["stage_data"]} if "stage_data" in record else {}),
                     "skill_name": record.get("skill_name"),
                     "skill_version": record.get("skill_version"),
                     "qualification": record.get("qualification", "unknown"),
@@ -101,6 +104,13 @@ class TaskMemory:
         if previous and previous["archived"]:
             raise HarnessError("task_archived", "Use a new task ID after archival")
 
+        if previous and previous["goal"] != args.goal:
+            raise HarnessError("task_conflict", "Keep the original goal; record phase progress in last_confirmed")
+        try:
+            delivery = preserve(previous.get("delivery") if previous else None, args.delivery, args.goal)
+        except ValueError as exc:
+            raise HarnessError("delivery_conflict", str(exc)) from exc
+
         # Carry unresolved evidence forward even when the caller omits it in a new summary.
         unresolved = (
             self._unresolved(self._operations(previous["operation_ids"])) if previous else []
@@ -149,6 +159,7 @@ class TaskMemory:
 
         content = {
             **args.model_dump(),
+            "delivery": delivery,
             "operation_ids": identities,
             "skill_versions": versions,
             "capabilities": previous["capabilities"] if previous else self.capabilities,
@@ -164,7 +175,7 @@ class TaskMemory:
             content["resource_versions"] = previous["resource_versions"]
         if previous and "memory_state" in previous:
             content["memory_state"] = previous["memory_state"]
-        if previous and all(previous[key] == value for key, value in content.items()):
+        if previous and all(previous.get(key) == value for key, value in content.items()):
             self._write(previous)
             return {**self._view(previous), "changed": False}
         record = {
@@ -206,9 +217,14 @@ class TaskMemory:
             "summary": args.summary,
             "operation_ids": unique(args.operation_ids),
             "evidence_refs": unique([r.model_dump() for r in args.evidence_refs]),
+            "criterion_results": [r.model_dump() for r in args.criterion_results],
+            "method_evidence": args.method_evidence.model_dump() if args.method_evidence else None,
         }
+        selected_ids = [identity for identity in record["operation_ids"] if identity in conclusion["operation_ids"]]
+        if not args.criterion_results:
+            conclusion["criterion_results"] = operation_results(self.store, selected_ids)
         if record.get("task_result"):
-            if all(record["task_result"][k] == v for k, v in conclusion.items()):
+            if all(record["task_result"].get(k, [] if k == "criterion_results" else None) == v for k, v in conclusion.items()):
                 return self._view(record)
             raise HarnessError("task_result_conflict", "A final task conclusion cannot be replaced")
         state = record.get("execution")
@@ -285,6 +301,33 @@ class TaskMemory:
                         "inapplicable_evidence",
                         "Motion completion requires verification and confirmed HOLD",
                     )
+        delivery = record.get("delivery")
+        # Operation-owned criterion observations cannot be replaced by a caller's assertion.
+        authoritative = {result["criterion_id"]: result for result in operation_results(self.store, selected_ids)}
+        supplied = {r["criterion_id"]: r for r in conclusion["criterion_results"]}
+        if any(supplied.get(key) != value for key, value in authoritative.items()):
+            raise HarnessError("criterion_conflict", "Use original operation criterion results")
+        for result in conclusion["criterion_results"]:
+            from .contracts import CriterionResult
+            CriterionResult.model_validate(result)
+            for ref in result["evidence_refs"]:
+                value = self.store.get(ref["kind"], "workspace-note_" + ref["id"] if ref["kind"] == "workspace_note" else ref["id"])
+                if args.outcome == "succeeded" and (value.get("archived") or value.get("task_id", args.task_id) != args.task_id):
+                    raise HarnessError("inapplicable_evidence", "Criterion evidence is archived or belongs to another task")
+        if delivery and args.outcome == "succeeded":
+            issues = check_results(delivery, conclusion["criterion_results"])
+            if delivery["kind"] == "reusable_method":
+                report = None
+                if args.method_evidence:
+                    if args.method_evidence.kind != "artifact":
+                        raise HarnessError("inapplicable_evidence", "Method evidence must be a fixed JSON artifact")
+                    report = json.loads(self.store.read_artifact(args.method_evidence.id))
+                issues += check_method(delivery, report)
+                entry = delivery.get("entry")
+                if entry and record["skill_versions"].get(entry["skill"]) != entry["version"]:
+                    issues.append("Method entry differs from task skill versions")
+            if issues:
+                raise HarnessError("goal_not_satisfied", "; ".join(issues))
         snapshots = []
         for ref, value in materials:
             if ref.kind in ("workspace_note", "memory"):
@@ -304,6 +347,7 @@ class TaskMemory:
         record["task_result"] = {
             **conclusion,
             "goal": record["goal"],
+            "delivery": delivery,
             "constraints": record["constraints"],
             "skill_versions": record["skill_versions"],
             "at": time.time(),
@@ -386,6 +430,7 @@ class TaskMemory:
                 TaskCheckpointSave(
                     task_id=args.task_id,
                     goal=args.goal,
+                    delivery=args.delivery,
                     constraints=args.constraints,
                     skill_versions={},
                     last_confirmed="任务已建立，尚未执行",
@@ -398,6 +443,10 @@ class TaskMemory:
             record = self._load(args.task_id)
             if args.recipe:
                 record["recipe"] = args.recipe
+        try:
+            delivery = preserve(record.get("delivery"), args.delivery, args.goal)
+        except ValueError as exc:
+            raise HarnessError("delivery_conflict", str(exc)) from exc
         if (
             record["archived"]
             or record["goal"] != args.goal
@@ -405,6 +454,11 @@ class TaskMemory:
             or record.get("recipe") != args.recipe
         ):
             raise HarnessError("task_conflict", "Task ID already has different or archived content")
+        if delivery != record.get("delivery"):
+            if record.get("task_result"):
+                raise HarnessError("task_finished", "A finished task cannot add a delivery contract")
+            record["delivery"] = delivery
+            self._write(record)
         if "execution" not in record:
             record["resource_versions"] = resource_versions if resource_versions is not None else self.resource_versions
             if capabilities is not None:

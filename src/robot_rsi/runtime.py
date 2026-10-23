@@ -10,7 +10,7 @@ from pydantic import ValidationError
 from .adapters import build_adapter
 from .assets import Assets
 from .builtin_tasks.pick_place import PICK_PLACE_VERSION, pick_place
-from .capabilities import PICK_PLACE_REQUIREMENTS, PickPlaceGoal, SkillContext
+from .capabilities import PICK_PLACE_REQUIREMENTS, PickPlaceGoal, SkillContext, SkillArtifacts
 from .catalog import public_descriptor
 from .contracts import (
     HarnessError,
@@ -305,6 +305,8 @@ class Runtime:
             bound,
             lambda stage, data: self.operations.stage(identity, stage, data),
             versions,
+            identity,
+            SkillArtifacts(self.store.read_artifact, self.store.artifact),
         )
 
     def validate_pick_place(self, args):

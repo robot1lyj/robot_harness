@@ -15,8 +15,8 @@ coding 宿主保留原有文件、终端和授权。框架不依赖 ROS 2，也�
 准备固定 core wheel，在你选定的机器人使用目录运行：
 
 ```bash
-uv tool run --from /path/robot_rsi_harness-0.3.2-py3-none-any.whl robot-rsi init . \
-  --core-wheel /path/robot_rsi_harness-0.3.2-py3-none-any.whl --source /path/legacy-project
+uv tool run --from /path/robot_rsi_harness-0.4.0-py3-none-any.whl robot-rsi init . \
+  --core-wheel /path/robot_rsi_harness-0.4.0-py3-none-any.whl --source /path/legacy-project
 uv run --no-sync robot-rsi guide agent
 ```
 

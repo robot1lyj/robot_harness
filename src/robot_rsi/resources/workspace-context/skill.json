@@ -1,6 +1,6 @@
 {
   "name": "workspace_context",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "kind": "agent_workflow",
   "category": "foundation",
   "description": "Recover the next useful decision from scoped project owners and notes; write back changed facts and continuation paths.",

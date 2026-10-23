@@ -316,6 +316,6 @@ async def test_new_workspace_keeps_registered_foundation_version_until_host_disc
     async with Runtime(other) as runtime:
         assert runtime.registry.resolve("task_memory")["version"] == "0.3.0"
         runtime.registry.discover()
-        runtime.registry.enable("task_memory", "0.5.0")
-        assert runtime.registry.resolve("task_memory")["version"] == "0.5.0"
+        runtime.registry.enable("task_memory", "0.6.0")
+        assert runtime.registry.resolve("task_memory")["version"] == "0.6.0"
         assert "task_finish" in runtime.registry.resolve("task_memory")["instructions"]

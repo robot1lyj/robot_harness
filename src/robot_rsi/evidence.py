@@ -23,9 +23,17 @@ def export_task(store, registry, task_id):
             for item in value:
                 visit(item)
         elif isinstance(value, dict):
+            if value.get('kind') in {'artifact', 'camera_observation', 'observation', 'depth', 'memory'} and isinstance(value.get('id'), str):
+                key = (value['kind'], value['id'])
+                if key not in found:
+                    try:
+                        found[key] = store.get(*key)
+                        visit(found[key])
+                    except HarnessError:
+                        pass
             for key, item in value.items():
                 kind = {'observation_id': 'observation', 'camera_observation_id': 'camera_observation',
-                        'plan_id': 'plan', 'depth_id': 'depth'}.get(key)
+                        'plan_id': 'plan', 'depth_id': 'depth', 'report_id': 'artifact'}.get(key)
                 if not kind and (key.endswith('_artifact') or key == 'artifact_id'):
                     kind = 'artifact'
                 if kind and isinstance(item, str) and (kind, item) not in found:

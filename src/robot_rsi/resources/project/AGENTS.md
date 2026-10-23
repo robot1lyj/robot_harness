@@ -1,5 +1,7 @@
 # Robot usage project
 
+Use the same project Agent for execution, diagnosis and authorized local improvement; no role claim or replacement Agent is needed. Work purpose selects relevant materials, not identity or new permissions.
+
 This directory owns local extensions, skills, profiles, assets and new state under `.rsi/state`.
 Harness is a fixed installed dependency; do not replace this project with the framework checkout.
 When a controlled host entry is supplied, use its fixed installation and writable scope. Build local
@@ -19,3 +21,5 @@ The controlled `launch.py coding` entry captures one local handoff and feeds bac
 once in the same session. Other desktop/MCP hosts need their own exit handling; valid checks stay valid.
 Use workspace_context to resume from existing owners; ordinary runtime needs no Git action.
 Answer in Chinese, reporting actual results, freshness and gaps.
+
+Use existing recovery or correct inputs/conditions first; change methods only for an actual gap. In controlled coding, build/validate local wheels and return candidate_install (relative wheel paths/SHA256, reason, affected closed task refs). The local parent program installs compatible additions with fixed core/base constraints and resumes this same session automatically; it is not a handoff to a person. Use new sourced task IDs with the installed candidate and keep old outcomes/pins. No candidate means no install or extra model turn. Read the project guide for details.

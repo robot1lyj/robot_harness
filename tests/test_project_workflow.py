@@ -124,7 +124,7 @@ async def test_feedback_link_version_paths_host_boundary_and_changed_blocks(tmp_
         await runtime.invoke("task_begin", {"task_id": "source", "goal": "Read the workflow"})
         await runtime.invoke("skill_describe", {"name": "workspace_context"}, task_id="source")
         source = runtime.task_memory._load("source")
-        assert source["skill_versions"]["workspace_context"] == "0.3.0"
+        assert source["skill_versions"]["workspace_context"] == "0.4.2"
         await runtime.invoke("task_cancel", {"task_id": "source"})
         await runtime.invoke("task_archive", {"task_id": "source"})
         runtime.registry.disable("workspace_context")

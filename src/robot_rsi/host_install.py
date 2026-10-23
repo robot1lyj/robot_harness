@@ -10,6 +10,7 @@ import shutil
 import stat
 import subprocess
 import sys
+import tempfile
 import zipfile
 from email.parser import BytesParser
 from pathlib import Path
@@ -35,7 +36,7 @@ def wheel_metadata(path):
     return canonicalize_name(info["Name"]), info, names
 
 
-def prepare(directory, core_wheel, core_sha256, requirements, *, wheels=(), uv=None, codex=None):
+def prepare(directory, core_wheel, core_sha256, requirements, *, wheels=(), uv=None, codex=None, extra_dependencies=None, allow_network=False):
     root = Path(directory).expanduser().absolute()
     if root.exists() or root.is_symlink():
         raise HarnessError("host_directory_exists", "宿主安装必须使用新目录；不采纳现有可写安装")
@@ -75,10 +76,10 @@ def prepare(directory, core_wheel, core_sha256, requirements, *, wheels=(), uv=N
         if not (tools / "uv").is_file():
             raise ValueError("Existing uv executable is required")
         log = root / "prepare.log"
-        def run(*arguments):
+        def run(*arguments, network=False):
             with log.open("a") as stream:
                 subprocess.run(list(map(str, arguments)), check=True, stdout=stream, stderr=stream,
-                               env={**os.environ, "UV_OFFLINE": "true", "PYTHONDONTWRITEBYTECODE": "1"})
+                               env={**os.environ, "UV_OFFLINE": "false" if network else "true", "PYTHONDONTWRITEBYTECODE": "1"})
         run(tools / "uv", "venv", "--python", Path(sys.executable).resolve(), root / "env")
         python = root / "env/bin/python"
         installation = artifact / "base.lock"
@@ -87,6 +88,17 @@ def prepare(directory, core_wheel, core_sha256, requirements, *, wheels=(), uv=N
         # Reject package startup hooks and base collisions before executing candidate code.
         base = snapshot(root / "env")
         site = next((root / "env/lib").glob("python*/site-packages"))
+        if extra_dependencies and Path(extra_dependencies).read_text().strip():
+            extra = artifact / "extra-dependencies.lock"
+            shutil.copyfile(extra_dependencies, extra)
+            run(tools / "uv", "pip", "install", "--python", python, "--require-hashes", "--only-binary", ":all:", "--no-deps", "-r", extra, network=allow_network)
+            added = snapshot(root / "env")
+            if any(added.get(n) != identity for n, identity in base.items()):
+                raise ValueError("Extra dependencies altered a fixed base file")
+            for name in added.keys() - base.keys():
+                path = Path(name)
+                if path.suffix in (".pth", ".egg-link") or path.stem in ("sitecustomize", "usercustomize"):
+                    raise ValueError("Extra dependencies cannot inject Python startup hooks")
         protected_modules = {p.name.split(".")[0] for p in site.iterdir() if not p.name.endswith(".dist-info")}
         candidates = []
         for source in wheels:
@@ -147,13 +159,46 @@ def prepare(directory, core_wheel, core_sha256, requirements, *, wheels=(), uv=N
         raise HarnessError("host_prepare_failed", "宿主安装未获认可；原安装不动，失败目录/日志保留", details={"root": str(root), "cause": str(exc)}) from exc
 
 
-def update(baseline, directory, wheels):
+def update(baseline, directory, wheels, *, allow_network=False):
     root = Path(baseline).resolve(strict=True).parent
     data = verify(root)
     artifact = root / "artifacts"
     replacements = {wheel_metadata(Path(p))[0]: Path(p) for p in wheels}
     for old in data["local_wheels"]:
         replacements.setdefault(old["name"], artifact / old["file"])
-    return prepare(directory, artifact / data["core"]["wheel"], data["core"]["sha256"],
-                   artifact / "dependencies.lock", wheels=list(replacements.values()),
-                   uv=root / "tools/uv", codex=root / "tools/codex" if (root / "tools/codex").exists() else None)
+    # uv resolves the project additions under the original exact base constraints.
+    # Only wheel metadata is read; no source builds or project/provider execution.
+    with tempfile.TemporaryDirectory(prefix="robot-rsi-resolve-", dir=root.parent) as scratch:
+        scratch = Path(scratch)
+        requirements = scratch / "project.in"
+        requirements.write_text("\n".join(str(p.resolve()) for p in replacements.values()) + "\n")
+        for source in replacements.values():
+            _, info, _ = wheel_metadata(source)
+            for dependency in info.get_all("Requires-Dist", []):
+                if Requirement(dependency).url:
+                    raise ValueError("Project wheel dependencies must use named requirements or explicitly selected project wheels")
+        locked = scratch / "resolved.lock"
+        argv = [str(root / "tools/uv"), "pip", "compile", str(requirements),
+                "--constraint", str(artifact / "base.lock"), "--generate-hashes",
+                "--only-binary", ":all:", "--no-header", "--output-file", str(locked)]
+        if not allow_network:
+            argv.append("--offline")
+        resolved = subprocess.run(argv, capture_output=True, text=True,
+                                  env={**os.environ, "UV_OFFLINE": "false" if allow_network else "true"})
+        if resolved.returncode:
+            raise ValueError("Compatible dependency resolution failed; fixed base unchanged: " + resolved.stderr)
+        base_names = {canonicalize_name(Requirement(line.rstrip("\\").strip()).name)
+                      for line in (artifact / "dependencies.lock").read_text().splitlines()
+                      if line and line[0].isalnum()}
+        excluded = base_names | set(replacements) | {"robot-rsi-harness"}
+        extras = []
+        for block in re.findall(r"(?m)^[a-zA-Z0-9][^\n]*(?:\n[ \t]+[^\n]*)*", locked.read_text()):
+            first = block.splitlines()[0].rstrip("\\").strip()
+            if canonicalize_name(Requirement(first).name) not in excluded:
+                extras.append(block)
+        extra = scratch / "extra.lock"
+        extra.write_text("\n".join(extras) + "\n")
+        return prepare(directory, artifact / data["core"]["wheel"], data["core"]["sha256"],
+                       artifact / "dependencies.lock", wheels=list(replacements.values()),
+                       uv=root / "tools/uv", codex=root / "tools/codex" if (root / "tools/codex").exists() else None,
+                       extra_dependencies=extra, allow_network=allow_network)

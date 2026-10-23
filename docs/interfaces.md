@@ -177,3 +177,17 @@ previous 复用依赖/条件未变且覆盖所需合同的旧证据；候选说�
 ## 同项目资料与框架反馈
 
 宿主 profile.project 沿现有角色选择用途；project_read 找最多三项资料或按键读正文。issue_create 保存有依据的处理位置与最小复现，issue_get 读取短状态或关联详情。答复导入、安装核对与选定验证仅宿主 CLI，沿原 Store/任务版本/送达游标；字段、命令与完整独立安装例子见 [项目工作流](project-workflow.md)。
+
+### 可选完整目标交付（core 0.4.0）
+
+TaskBegin / task_checkpoint_save 可带 delivery：kind=one_off 或 reusable_method、original_goal、criteria（id/description/required）、entry（skill/version/parameters）和必要 remaining。目标与必要判据建立后不可被阶段摘要替换；尚未声明可沿 save 增补，入口/剩余项随事实更新。普通旧任务无需声明。
+
+task_finish 可带 criterion_results（criterion_id、passed/failed/unknown、source、evidence_refs、remaining）；技能 result 使用相同结构时，结束自动读取原操作结果，调用者不能覆写。成功要求每个必要判据有带证据的 passed 且无必要剩余项。域内 unknown 不改变操作的物理效果状态。
+
+可复用方法的 method_evidence 引用固定 JSON artifact，含 registration（实际 skill_describe）和 runs（source、实际 operation），至少两组不同 parameters、同一 skill/version，逐项结果满足声明判据。coding Handoff 复用 delivery 与一次结果的 criterion_results，method_evidence 为项目内 JSON 文件路径，父进程只读既有报告结构，不导入插件、不执行动作或复测。结构一致性不能代替报告来源的真实性；证据标明执行来源与适用范围。
+
+SkillContext 新增可选 operation_id 与 artifacts.read(id)/write(bytes,mime,metadata)，仅复用当前 Store 的产物读写；不提供任务/操作状态修改。旧技能上下文构造保持兼容。
+
+受控 coding Handoff 可选 candidate_install：wheels（项目内path/sha256）、reason、tasks（当前受影响任务的profile/task_id）。这是同一Agent的中间安装请求，父进程读原任务边界、调用原host update并记录原coding_delivery.candidate_installs，再同session返回新入口继续原目标；不是新的运行工具/审批或最终完成声明。固定core/底座不变，兼容新增依赖由uv生成哈希锁，原role/Store保持。
+
+安装失败回到同session修正本地候选；不重复安装相同失败产物。Handoff.blocked_reason仅用于真实凭据/网络/设备/宿主授权缺项，保存pending而非成功；不是正常安装所需人工审批。

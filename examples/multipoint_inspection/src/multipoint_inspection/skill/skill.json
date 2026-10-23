@@ -1,0 +1,10 @@
+{
+  "name": "multipoint_inspection", "version": "0.1.0", "kind": "code",
+  "category": "inspection", "description": "Plan and inspect a set of points with image-based results and bounded capture recovery.",
+  "qualification": "synthetic_example_unvalidated", "resources": ["manipulator"],
+  "requires": {"robot.state": 1, "robot.command": 1, "camera.capture": 1},
+  "failure": "Keep last confirmed point and remaining points in stage events. Never replay unknown motion; only resample unreadable frames.",
+  "keywords": ["inspection", "巡检", "Agent"],
+  "input_model": "multipoint_inspection:Parameters", "output_model": "robot_rsi.skill_result:SkillResult",
+  "entry": "multipoint_inspection:run"
+}

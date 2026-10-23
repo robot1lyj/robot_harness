@@ -1,0 +1,3 @@
+# Multipoint inspection
+
+Call task_run once with the point set and fixed resource/model bindings. The code plans a nearest-next order, moves continuously, checks pixels, resamples unreadable frames within the bound and returns a report artifact. Read operation_get after completion. Declare report and normal criteria; normal is required only for a confirm_normal goal. Operation success means the procedure returned, not that normality passed. Keep unknown physical effects/cancellation and original ownership; read stage events for confirmed/remaining points. The color rule is a small synthetic example, not a general vision or field-readiness claim.

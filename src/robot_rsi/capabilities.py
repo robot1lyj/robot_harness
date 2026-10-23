@@ -173,7 +173,16 @@ class SkillBindings:
 
 
 @dataclass(frozen=True)
+class SkillArtifacts:
+    """Existing Store artifact access only; no checkpoint or operation mutation."""
+    read: Callable[[str], bytes]
+    write: Callable[[bytes, str, dict | None], str]
+
+
+@dataclass(frozen=True)
 class SkillContext:
     bindings: SkillBindings
     stage: Callable[[str, dict | None], None]
     resource_versions: dict = field(default_factory=dict)
+    operation_id: str | None = None
+    artifacts: SkillArtifacts | None = None

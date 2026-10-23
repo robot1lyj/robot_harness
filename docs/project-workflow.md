@@ -5,7 +5,7 @@
 已有编辑/终端工具实施；内置 source-only agent run 继续只读，不代替 coding 工具。
 配置在 profiles，扩展在 extensions/skills，资产在 assets，新状态默认 .rsi/state。
 CLI 未显式选择时实际读取最近的 tool.robot-rsi.profile，默认运行目录和任务沿该 Profile；
-显式 --profile/ROBOT_RSI_PROFILE 优先，跨角色工作明确选择 development Profile。
+显式 --profile/ROBOT_RSI_PROFILE 优先。同一个Agent按工作需要选择宿主已有的Profile/资料范围，不认领或切换身份；原role/Store隔离保持，文本不授新权限。既有对话不会因目的变化清空，只有独立评估声明需要干净上下文。
 
 接入同时交付实际能力/资源目录和日常技能目录。先用 capabilities_list/resources_list 与
 skills_list/skill_describe 看当前事实，再执行安装的代码技能，例如状态/相机观测及时效缺项报告。
@@ -45,7 +45,7 @@ git status --short
 没有相关变化不重写，完成过程转为已有历史引用，不强制新目录或 MEMORY 文件。Git 保存代码差异，记忆只保留
 决策与继续路径，不复制代码/日志。已有提交可引用，本次 SHA 在提交后交付，不为回写自身 SHA 再循环提交。
 有用失败保留症状、尝试、观察和重试条件，假设不变事实；只在相关行为/版本/条件变化时重验受影响部分。
-开发资料和评估答案按原用途隔离，运行只读适用共同事实/方法；便签不代替环境、配置或设备状态 owner。
+资料按原Profile/用途隔离；同一已授开发与运行工具的Agent可按需读局部改进资料，普通执行只需适用事实/方法。便签不代替环境、配置或设备状态owner。
 
 ### 已接入的本地 coding 收尾
 
@@ -70,8 +70,8 @@ git status --short
 用末尾记录中的原 session ID 查看或显式接续（保留原模型/权限，不使用 `--last`）：
 
 ```bash
-/path/host/core-0.3.2-v1/launch.py coding --project /project --resume-session SESSION_ID --status
-/path/host/core-0.3.2-v1/launch.py coding --project /project --auth /existing/auth.json --network --resume-session SESSION_ID
+/path/host/core-0.4.0-v1/launch.py coding --project /project --resume-session SESSION_ID --status
+/path/host/core-0.4.0-v1/launch.py coding --project /project --auth /existing/auth.json --network --resume-session SESSION_ID
 ```
 
 读取已完成记录不会重跑模型；新目标重新调用 coding。当前入口支持模型、`-c`配置、原隔离/权限选项和输出文件，
@@ -88,11 +88,11 @@ manifest或成果格式要保留，只有影响成果/范围的歧义才问。�
 宿主从选定发行 wheel 及固定、带 hash 的运行依赖清单准备**新目录**，不采纳当前可写 venv 的摘要：
 
 ```bash
-robot-rsi host prepare --directory /path/host/core-0.3.2-v1 \
-  --core-wheel /artifacts/robot_rsi_harness-0.3.2-py3-none-any.whl \
+robot-rsi host prepare --directory /path/host/core-0.4.0-v1 \
+  --core-wheel /artifacts/robot_rsi_harness-0.4.0-py3-none-any.whl \
   --core-sha256 APPROVED_SHA256 --requirements /artifacts/dependencies.lock \
   --wheel /project/dist/local_extension.whl --codex /existing/codex
-/path/host/core-0.3.2-v1/launch.py run --project /project -- guide agent
+/path/host/core-0.4.0-v1/launch.py run --project /project -- guide agent
 ```
 
 SHA来自已选择的发行记录。依赖清单不含core/本地包，不含editable，必须有完整版本与hash；宿主用uv
@@ -108,7 +108,7 @@ PYTHONPATH和user-site的同名替换。发现不连接设备；配置不是硬�
 受控coding使用既有Codex CLI（宿主须先提供现成登录文件）：
 
 ```bash
-/path/host/core-0.3.2-v1/launch.py coding --project /project \
+/path/host/core-0.4.0-v1/launch.py coding --project /project \
   --auth /existing/auth.json --network -- \
   --ignore-user-config --dangerously-bypass-approvals-and-sandbox \
   --skip-git-repo-check --model gpt-6.1-sol -c 'model_reasoning_effort="low"' '用户目标'
@@ -122,8 +122,8 @@ PYTHONPATH和user-site的同名替换。发现不连接设备；配置不是硬�
 普通本地更新在已有授权下由宿主执行，无额外固定审批；受控Agent只提交候选：
 
 ```bash
-robot-rsi host update --baseline /path/host/core-0.3.2-v1/approved.json \
-  --directory /path/host/core-0.3.2-v2 --wheel /project/dist/local_extension_new.whl
+robot-rsi host update --baseline /path/host/core-0.4.0-v1/approved.json \
+  --directory /path/host/core-0.4.0-v2 --wheel /project/dist/local_extension_new.whl
 ```
 
 update保留原core wheel/hash与运行依赖，创建新安装，不覆盖旧安装/技能/任务引用；不兼容依赖或核心覆盖/
@@ -132,7 +132,7 @@ update保留原core wheel/hash与运行依赖，创建新安装，不覆盖旧�
 不声称已保护隔离外进程、root或另一全权限宿主。现仅支持已验证的Linux路径，不部署服务或更改全局权限。
 
 保留已有项目、适配包和状态目录。宿主 profile.project 指定项目 ID、根目录、本次用途、共同事实键
-与明确的资料索引。用途只路由资料，沿用原身份：onboarding/improve → development，run → runtime，
+与明确的资料索引。用途只路由资料，保留原Store字段映射（不是Agent身份）：onboarding/improve → development，run → runtime，
 evaluate → evaluation。各类资料可在同一项目中保存，原 Store 的角色/站点/工作区隔离继续有效。
 
 ```json
@@ -163,7 +163,7 @@ Agent 说明判断依据，框架保存证据，不自动诊断。普通本地�
 actual、reproducer，可带 source_task、operation_ids、evidence_refs。route 为 local_input / local_extension /
 framework_contract / framework_core。宿主补实际安装、能力、技能和绑定版本，操作必须属于 source_task。
 
-候选沿原 Registry/evaluation/release：固定正常与缺口输入、判据和成本，独立身份比较
+候选沿原 Registry/evaluation/release：固定正常与缺口输入、判据和成本，在独立评估上下文/原evaluation范围比较
 baseline_independent / baseline_assisted / candidate_independent。纯计算物理次数为 0，没有适用援助时
 assisted 组也如实记录零援助/模型调用。评价实际结果，operation 成功不代表目标成功。原 Releases
 通过后才切换；任务固定版本，失败/未知/取消语义保留。非抓放失败结束旧任务，以关联新任务验证。
@@ -231,3 +231,21 @@ root/good 和 root/bad 建候选，再 `--phase compare`，最后新进程 `--ph
 运行入口只收到 position_m/offset_mm 与操作要求，实际执行前 task_context 保存在每行的
 context_before_execution；目标和结束摘要不拼入 oracle。固定 expected/容差只在宿主 scored_task 比较，
 记录仅公开输入、实际输出和通过/失败结论；真实输出等于预期值是合法观测。selected-failure.json 沿同一边界导出。
+
+### 可复用方法交付
+
+先判断用户要一次结果还是可重复调用的方法。后者要提供真实 Registry 代码入口、固定版本/有效输入例、完整目标判据及两组输入的实际端到端报告；保留必要剩余项。用已有 TaskMemory 或 coding_delivery 可选 delivery，不复制成第二套任务状态。普通修复继续最小 C10 收尾。父进程只读生成的注册/运行报告，不执行用户插件或追加复测。长期流程写在代码中，模型只处理缺口；可沿宿主已授工具查找成熟实现，记录关键来源/版本/采用理由。
+
+完整离线例见 examples/multipoint_inspection（独立安装方法）和 examples/inspection_foundation（仅基础适配/合成图像）。图像判据独立于命令回执，异常报告可完成，确认正常必须通过正常判据；物理未知效果仍不得重放。
+
+同一结构可用于抓放（判据覆盖实际抬升/保持/放置观测）或魔方（观测初态、求解/动作、重新观测最终复原）。命令/求解完成不替代领域结果；本包没有实现真机抓取或魔方流程。
+
+### 同一Agent自动安装候选并继续
+
+瞬时采样先用方法内恢复，输入/配置/现场条件修对应条件，确有方法缺口才改源码。正常流程仍在代码或专用模型中，Agent处理目标、选择和缺口；不固定换Agent或老师。
+
+受控 coding 中，Agent在本项目构建/必要验证wheel，返回中间交接 `candidate_install={wheels:[{path,sha256}],reason,tasks:[{profile,task_id}]}`，paths/validation/checkpoint引用实际源码和已有验证。tasks列当前受影响任务，先结束/归档或交接，不能有活动操作。尚未安装时无需冒称最终方法就绪或提交未完成功能。当地父进程是程序：自动调用原host update，从选定wheel以uv解析兼容新增依赖并固定哈希，保留core与底座约束、旧安装/任务，随后向同一个native session返回新入口/版本继续调用与最终收尾。正常本地安装不交给人或另一个Agent。
+
+只处理项目内选定wheel，不给任意宿主shell，不运行项目插件/动作或源码构建；已有依赖/缓存优先，网络按原宿主选项。固定底座冲突不静默升级，缺凭据/网络或不可用的二进制依赖报告具体条件。新代码用带旧任务来源的新task_id验证，旧未知/取消不重放。无候选零安装/额外模型；相同候选不自动循环尝试，失败保留安装目录/待办并交回同一Agent修正本地代码/依赖元数据；只有真实凭据、网络、设备或宿主授权缺项才用blocked_reason留下明确待办。安装接续是继续工作，不是额外评审，普通C10缺项反馈仍最多一次。
+
+显式中断后沿同一session续作，可使用记录中的新固定入口；原入口也可路由到该项目已认可的候选。只读/source-only、未连接此父进程的MCP/桌面入口仅拥有宿主实际给出的能力，不承诺自动获得开发或安装权限。

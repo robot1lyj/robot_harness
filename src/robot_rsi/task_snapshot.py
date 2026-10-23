@@ -86,6 +86,7 @@ def projection(owner, record):
     return {
         "task_id": record["task_id"],
         "goal": record["goal"],
+        **({"delivery": record["delivery"]} if record.get("delivery") else {}),
         "constraints": unique(record["constraints"]),
         "skill_versions": record["skill_versions"],
         "resource_versions": record.get("resource_versions", {}),
@@ -151,6 +152,7 @@ def maintain(owner, record):
         candidate.get(key) != state["view"].get(key)
         for key in (
             "goal",
+            "delivery",
             "constraints",
             "skill_versions",
             "resource_versions",
